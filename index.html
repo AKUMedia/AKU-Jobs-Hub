@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>AKU Jobs Hub</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          void:    '#0D0D0D',
+          onyx:    '#111111',
+          graphite:'#1A1A1A',
+          iron:    '#252525',
+          steel:   '#333333',
+          chrome:  '#C0C0C0',
+          silver:  '#E8E8E8',
+          mist:    '#888888',
+          accent:  '#D4AF37',
+        },
+        fontFamily: {
+          display: ['Syne', 'sans-serif'],
+          body:    ['DM Sans', 'sans-serif'],
+        },
+        boxShadow: {
+          chrome:  '0 0 0 1px rgba(192,192,192,0.15), 0 4px 24px rgba(0,0,0,0.6)',
+          glow:    '0 0 20px rgba(192,192,192,0.08), 0 0 40px rgba(192,192,192,0.04)',
+          accent:  '0 0 20px rgba(212,175,55,0.2)',
+          inner:   'inset 0 1px 0 rgba(255,255,255,0.06)',
+        },
+      }
+    }
+  }
+</script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --chrome-gradient: linear-gradient(135deg, #8a8a8a 0%, #d4d4d4 30%, #b0b0b0 50%, #e8e8e8 65%, #9a9a9a 80%, #c8c8c8 100%);
+    --border-metal: 1px solid rgba(192,192,192,0.12);
+    --border-glow:  1px solid rgba(192,192,192,0.25);
+    --card-bg: #1A1A1A;
+    --page-bg: #0D0D0D;
+  }
+
+  html, body {
+    background: #0D0D0D;
+    color: #E8E8E8;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #111; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+  /* Chrome shimmer animation */
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(192,192,192,0.2), 0 0 12px rgba(192,192,192,0.08); }
+    50%       { box-shadow: 0 0 0 1px rgba(192,192,192,0.45), 0 0 28px rgba(192,192,192,0.18); }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes accent-pulse {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(212,175,55,0.3), 0 0 16px rgba(212,175,55,0.12); }
+    50%       { box-shadow: 0 0 0 1px rgba(212,175,55,0.6), 0 0 32px rgba(212,175,55,0.25); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-4px); }
+  }
+
+  .chrome-text {
+    background: var(--chrome-gradient);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 4s linear infinite;
+  }
+  .chrome-border {
+    border: var(--border-glow);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  .premium-card {
+    background: var(--card-bg);
+    border: var(--border-metal);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: border-color .25s, box-shadow .25s, transform .2s;
+  }
+  .premium-card:hover {
+    border-color: rgba(192,192,192,0.28);
+    box-shadow: 0 0 0 1px rgba(192,192,192,0.1), 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+    transform: translateY(-2px);
+  }
+  .pro-card {
+    position: relative;
+    overflow: hidden;
+  }
+  .pro-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, #8a8a8a, #e8e8e8, #9a9a9a, #d4d4d4, #b0b0b0);
+    background-size: 300% 300%;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: shimmer 3s linear infinite;
+    pointer-events: none;
+  }
+  .pro-card {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  .tab-page { display: none; animation: slide-up .3s ease; }
+  .tab-page.active { display: block; }
+  .nav-btn { transition: color .2s, opacity .2s; }
+  .nav-btn.active .nav-icon { color: #E8E8E8; }
+  .nav-btn.active .nav-label { color: #E8E8E8; font-weight: 600; }
+  .nav-btn:not(.active) .nav-icon,
+  .nav-btn:not(.active) .nav-label { color: #555; }
+
+  .filter-chip {
+    border: 1px solid rgba(192,192,192,0.14);
+    background: #1A1A1A;
+    color: #888;
+    transition: all .2s;
+    cursor: pointer;
+  }
+  .filter-chip.active {
+    border-color: rgba(192,192,192,0.45);
+    background: rgba(192,192,192,0.07);
+    color: #E8E8E8;
+  }
+  .btn-chrome {
+    background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+    border: 1px solid rgba(192,192,192,0.2);
+    color: #d4d4d4;
+    transition: all .2s;
+  }
+  .btn-chrome:hover {
+    border-color: rgba(192,192,192,0.5);
+    background: linear-gradient(135deg, #333, #222);
+    color: #fff;
+    box-shadow: 0 0 16px rgba(192,192,192,0.12);
+  }
+  .btn-accent {
+    background: linear-gradient(135deg, #c9a227, #d4af37, #e8c84a);
+    color: #0D0D0D;
+    font-weight: 700;
+    border: none;
+    transition: all .2s;
+  }
+  .btn-accent:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 24px rgba(212,175,55,0.35);
+    transform: translateY(-1px);
+  }
+  .input-dark {
+    background: #111;
+    border: 1px solid rgba(192,192,192,0.12);
+    color: #E8E8E8;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .input-dark:focus {
+    outline: none;
+    border-color: rgba(192,192,192,0.4);
+    box-shadow: 0 0 0 3px rgba(192,192,192,0.06);
+  }
+  .input-dark::placeholder { color: #444; }
+  .hub-banner {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    transition: transform .3s;
+  }
+  .hub-banner:hover { transform: scale(1.01); }
+  .hub-banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 1.5px;
+    background: linear-gradient(135deg, rgba(192,192,192,0.5), rgba(255,255,255,0.1), rgba(192,192,192,0.4));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .noise-overlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .025;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  }
+  .scroll-area {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .badge-pro {
+    background: linear-gradient(135deg, #8a8a8a, #e8e8e8, #9a9a9a);
+    background-size: 200% auto;
+    animation: shimmer 2.5s linear infinite;
+    color: #111;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: 'Syne', sans-serif;
+  }
+  .badge-cat {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: var(--border-metal);
+    color: #888;
+    background: rgba(255,255,255,0.03);
+  }
+  .avatar-ring {
+    padding: 2px;
+    background: var(--chrome-gradient);
+    background-size: 200% auto;
+    animation: shimmer 3s linear infinite;
+    border-radius: 50%;
+  }
+  select.input-dark option { background: #1A1A1A; }
+
+  /* Telegram theme overrides */
+  body.tg-theme { background: var(--tg-theme-bg-color, #0D0D0D); }
+</style>
+</head>
+
+<body class="overflow-hidden h-screen flex flex-col">
+<div class="noise-overlay"></div>
+
+<!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+<header style="background: rgba(13,13,13,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(192,192,192,0.08);" class="flex items-center justify-between px-5 pt-4 pb-3 flex-shrink-0 relative z-10">
+  <div class="flex items-center gap-2.5">
+    <div style="width:32px;height:32px;background:linear-gradient(135deg,#1a1a1a,#2a2a2a);border:1px solid rgba(192,192,192,0.25);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);">
+      <span style="font-size:16px;">⚡</span>
+    </div>
+    <span class="font-display font-800 text-lg tracking-tight chrome-text">AKU Jobs Hub</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <div style="width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 6px #22c55e88;animation:pulse-glow 2s infinite;"></div>
+    <span style="font-size:11px;color:#555;font-family:'DM Sans',sans-serif;">LIVE</span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════ PAGES ═══════════════════════════ -->
+<main class="flex-1 scroll-area relative z-10" id="mainContent">
+
+  <!-- ─── TAB 1: JOBS FEED ─── -->
+  <div id="tab-jobs" class="tab-page active px-4 pt-4">
+    <div class="mb-4">
+      <h1 class="font-display font-bold text-2xl text-silver mb-1">Лента вакансий</h1>
+      <p style="color:#555;font-size:13px;">Актуальные проекты для фрилансеров</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex gap-2 mb-5 overflow-x-auto pb-1" style="scrollbar-width:none;">
+      <button class="filter-chip active rounded-full px-4 py-1.5 text-sm whitespace-nowrap font-medium" data-filter="all" onclick="filterJobs(this,'all')">Все</button>
+      <button class="filter-chip rounded-full px-4 py-1.5 text-sm whitespace-nowrap font-medium" data-filter="design" onclick="filterJobs(this,'design')">🎨 Дизайн</button>
+      <button class="filter-chip rounded-full px-4 py-1.5 text-sm whitespace-nowrap font-medium" data-filter="dev" onclick="filterJobs(this,'dev')">💻 Разработка</button>
+      <button class="filter-chip rounded-full px-4 py-1.5 text-sm whitespace-nowrap font-medium" data-filter="marketing" onclick="filterJobs(this,'marketing')">📣 Маркетинг</button>
+      <button class="filter-chip rounded-full px-4 py-1.5 text-sm whitespace-nowrap font-medium" data-filter="video" onclick="filterJobs(this,'video')">🎬 Видео</button>
+    </div>
+
+    <!-- Job Cards -->
+    <div id="jobsGrid" class="flex flex-col gap-3 pb-4"></div>
+  </div>
+
+  <!-- ─── TAB 2: PRO EXCHANGE ─── -->
+  <div id="tab-pro" class="tab-page px-4 pt-4">
+    <div class="mb-4">
+      <h1 class="font-display font-bold text-2xl text-silver mb-1">Биржа PRO</h1>
+      <p style="color:#555;font-size:13px;">Топовые фрилансеры экосистемы AKU</p>
+    </div>
+    <div id="proGrid" class="flex flex-col gap-3 pb-4"></div>
+  </div>
+
+  <!-- ─── TAB 3: POST ─── -->
+  <div id="tab-post" class="tab-page px-4 pt-4">
+    <div class="mb-5">
+      <h1 class="font-display font-bold text-2xl text-silver mb-1">Разместить</h1>
+      <p style="color:#555;font-size:13px;">Опубликуй вакансию или резюме</p>
+    </div>
+
+    <!-- Toggle -->
+    <div class="flex gap-2 mb-6" style="background:#111;border:1px solid rgba(192,192,192,0.1);border-radius:12px;padding:4px;">
+      <button id="postToggleJob" onclick="togglePostType('job')" class="flex-1 py-2 rounded-lg text-sm font-semibold transition-all" style="background:linear-gradient(135deg,#252525,#1e1e1e);border:1px solid rgba(192,192,192,0.2);color:#E8E8E8;">💼 Вакансия</button>
+      <button id="postToggleResume" onclick="togglePostType('resume')" class="flex-1 py-2 rounded-lg text-sm font-semibold transition-all" style="background:transparent;border:1px solid transparent;color:#555;">🧑‍💻 Резюме</button>
+    </div>
+
+    <div id="postForm" class="flex flex-col gap-4 pb-6">
+      <div>
+        <label class="block text-xs mb-1.5" style="color:#666;font-family:'Syne',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Заголовок</label>
+        <input type="text" class="input-dark w-full rounded-xl px-4 py-3 text-sm" placeholder="Например: UI/UX дизайнер для стартапа" />
+      </div>
+      <div>
+        <label class="block text-xs mb-1.5" style="color:#666;font-family:'Syne',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Категория</label>
+        <select class="input-dark w-full rounded-xl px-4 py-3 text-sm" style="appearance:none;">
+          <option>🎨 Дизайн</option>
+          <option>💻 Разработка</option>
+          <option>📣 Маркетинг</option>
+          <option>🎬 Видео / Контент</option>
+          <option>🤖 AI / Автоматизация</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs mb-1.5" style="color:#666;font-family:'Syne',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Бюджет / Ставка</label>
+        <input type="text" class="input-dark w-full rounded-xl px-4 py-3 text-sm" placeholder="от 15 000 ₽ / проект" />
+      </div>
+      <div>
+        <label class="block text-xs mb-1.5" style="color:#666;font-family:'Syne',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Описание</label>
+        <textarea class="input-dark w-full rounded-xl px-4 py-3 text-sm" rows="4" placeholder="Опиши задачу или свои навыки..."></textarea>
+      </div>
+      <div>
+        <label class="block text-xs mb-1.5" style="color:#666;font-family:'Syne',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Контакт (Telegram)</label>
+        <input type="text" class="input-dark w-full rounded-xl px-4 py-3 text-sm" placeholder="@username" />
+      </div>
+      <button onclick="handlePost()" class="btn-accent w-full py-4 rounded-xl text-sm font-bold tracking-wide mt-1" style="font-family:'Syne',sans-serif;letter-spacing:.04em;">
+        ОПУБЛИКОВАТЬ
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── TAB 4: AKU HUB ─── -->
+  <div id="tab-hub" class="tab-page px-4 pt-4">
+    <div class="mb-5">
+      <h1 class="font-display font-bold text-2xl mb-1"><span class="chrome-text">AKU</span> <span class="text-silver">Hub</span></h1>
+      <p style="color:#555;font-size:13px;">Экосистема студий и сервисов</p>
+    </div>
+
+    <!-- AKU Media Banner -->
+    <div class="hub-banner mb-4 p-5" style="background:linear-gradient(135deg,#111111 0%,#1a1a1a 40%,#141414 100%);">
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div style="width:44px;height:44px;background:linear-gradient(135deg,#1e1e1e,#2a2a2a);border:1px solid rgba(192,192,192,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);">🎬</div>
+          <div>
+            <div class="font-display font-bold text-base text-silver">AKU Media</div>
+            <div style="font-size:11px;color:#555;">Видеопроизводство</div>
+          </div>
+        </div>
+        <span style="font-size:10px;color:#888;border:1px solid rgba(192,192,192,0.15);border-radius:4px;padding:3px 8px;font-family:'Syne',sans-serif;letter-spacing:.06em;">STUDIO</span>
+      </div>
+      <p style="color:#888;font-size:13px;line-height:1.6;margin-bottom:16px;">Продающий видеоконтент под ключ. Вертикальные видео, <strong style="color:#C0C0C0;">Reels</strong> и <strong style="color:#C0C0C0;">TikTok</strong>-форматы с нативным сторителлингом, который конвертит.</p>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <span class="badge-cat">📱 Reels / TikTok</span>
+        <span class="badge-cat">🎥 Продающее видео</span>
+        <span class="badge-cat">✂️ Монтаж</span>
+        <span class="badge-cat">🎯 Конверсия</span>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="contactFounder()" class="btn-chrome flex-1 py-3 rounded-xl text-sm font-semibold" style="font-family:'Syne',sans-serif;">Узнать подробнее</button>
+      </div>
+    </div>
+
+    <!-- AKU Automation Banner -->
+    <div class="hub-banner mb-5 p-5" style="background:linear-gradient(135deg,#0f1114 0%,#141a1a 40%,#111111 100%);">
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div style="width:44px;height:44px;background:linear-gradient(135deg,#1a1e1e,#222a2a);border:1px solid rgba(192,192,192,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);">🤖</div>
+          <div>
+            <div class="font-display font-bold text-base text-silver">AKU Automation</div>
+            <div style="font-size:11px;color:#555;">AI & Боты</div>
+          </div>
+        </div>
+        <span style="font-size:10px;color:#888;border:1px solid rgba(192,192,192,0.15);border-radius:4px;padding:3px 8px;font-family:'Syne',sans-serif;letter-spacing:.06em;">STUDIO</span>
+      </div>
+      <p style="color:#888;font-size:13px;line-height:1.6;margin-bottom:16px;">Автоматизация бизнес-процессов, интеграция <strong style="color:#C0C0C0;">AI-ассистентов</strong> и разработка <strong style="color:#C0C0C0;">Telegram-ботов</strong>, которые работают за вас 24/7.</p>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <span class="badge-cat">🤖 AI-ассистенты</span>
+        <span class="badge-cat">📨 Telegram-боты</span>
+        <span class="badge-cat">⚙️ Автоматизация</span>
+        <span class="badge-cat">🔗 Интеграции</span>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="contactFounder()" class="btn-chrome flex-1 py-3 rounded-xl text-sm font-semibold" style="font-family:'Syne',sans-serif;">Узнать подробнее</button>
+      </div>
+    </div>
+
+    <!-- Contact Founder -->
+    <div class="premium-card rounded-2xl p-5 mb-6" style="background:linear-gradient(135deg,#151515,#1a1a1a);">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="avatar-ring" style="animation:float 4s ease-in-out infinite;">
+          <div style="width:44px;height:44px;background:#1a1a1a;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;">👤</div>
+        </div>
+        <div>
+          <div class="font-display font-bold text-silver text-sm">Основатель AKU</div>
+          <div style="font-size:11px;color:#555;">Готов обсудить ваш проект</div>
+        </div>
+        <div class="ml-auto flex items-center gap-1.5">
+          <div style="width:6px;height:6px;background:#22c55e;border-radius:50%;box-shadow:0 0 5px #22c55e88;"></div>
+          <span style="font-size:10px;color:#22c55e;">Online</span>
+        </div>
+      </div>
+      <button onclick="contactFounder()" class="btn-accent w-full py-3.5 rounded-xl text-sm" style="font-family:'Syne',sans-serif;letter-spacing:.04em;">
+        💬 СВЯЗАТЬСЯ С ОСНОВАТЕЛЕМ
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════ BOTTOM NAV ═══════════════════════════ -->
+<nav style="background:rgba(13,13,13,0.97);backdrop-filter:blur(24px);border-top:1px solid rgba(192,192,192,0.08);padding-bottom:env(safe-area-inset-bottom,8px);" class="flex-shrink-0 relative z-10">
+  <div class="flex items-center justify-around px-2 pt-2 pb-1">
+
+    <button class="nav-btn active flex flex-col items-center gap-0.5 px-3 py-1.5" onclick="switchTab('jobs', this)">
+      <span class="nav-icon text-xl">💼</span>
+      <span class="nav-label text-xs font-medium" style="font-family:'DM Sans',sans-serif;">Вакансии</span>
+    </button>
+
+    <button class="nav-btn flex flex-col items-center gap-0.5 px-3 py-1.5" onclick="switchTab('pro', this)">
+      <span class="nav-icon text-xl">🚀</span>
+      <span class="nav-label text-xs font-medium" style="font-family:'DM Sans',sans-serif;">Биржа PRO</span>
+    </button>
+
+    <button class="nav-btn flex flex-col items-center gap-0.5 px-3 py-1.5 relative" onclick="switchTab('post', this)">
+      <div style="width:40px;height:40px;background:linear-gradient(135deg,#c9a227,#d4af37);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-top:-14px;box-shadow:0 4px 16px rgba(212,175,55,0.35);border:1px solid rgba(255,255,255,0.1);">
+        <span style="font-size:20px;font-weight:900;color:#0D0D0D;line-height:1;">+</span>
+      </div>
+      <span class="nav-label text-xs font-medium" style="font-family:'DM Sans',sans-serif;color:#888;">Разместить</span>
+    </button>
+
+    <button class="nav-btn flex flex-col items-center gap-0.5 px-3 py-1.5" onclick="switchTab('hub', this)">
+      <span class="nav-icon text-xl">💎</span>
+      <span class="nav-label text-xs font-medium" style="font-family:'DM Sans',sans-serif;">AKU Hub</span>
+    </button>
+
+  </div>
+</nav>
+
+<!-- ═══════════════════════════ TOAST ═══════════════════════════ -->
+<div id="toast" style="position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A1A;border:1px solid rgba(192,192,192,0.2);color:#E8E8E8;padding:10px 20px;border-radius:12px;font-size:13px;opacity:0;transition:all .3s;z-index:100;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.6);pointer-events:none;font-family:'DM Sans',sans-serif;"></div>
+
+<!-- ═══════════════════════════ JS ═══════════════════════════ -->
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+const JOBS = [
+  { id:1, title:'UI/UX дизайнер для мобильного приложения', company:'TechFlow', category:'design', catLabel:'🎨 Дизайн', budget:'от 45 000 ₽', deadline:'Срочно', tags:['Figma','Mobile','Prototype'], remote:true },
+  { id:2, title:'Frontend-разработчик React/Next.js', company:'Startup XY', category:'dev', catLabel:'💻 Разработка', budget:'от 80 000 ₽', deadline:'2 недели', tags:['React','TypeScript','Tailwind'], remote:true },
+  { id:3, title:'SMM-менеджер для beauty-бренда', company:'Glamour Co', category:'marketing', catLabel:'📣 Маркетинг', budget:'25 000 ₽/мес', deadline:'Постоянно', tags:['Instagram','Reels','Контент'], remote:true },
+  { id:4, title:'Motion-дизайнер для Reels/TikTok', company:'AKU Media', category:'video', catLabel:'🎬 Видео', budget:'от 35 000 ₽', deadline:'1 неделя', tags:['After Effects','TikTok','Reels'], remote:true },
+  { id:5, title:'Python-бэкенд разработчик для AI-проекта', company:'NeuralLab', category:'dev', catLabel:'💻 Разработка', budget:'от 100 000 ₽', deadline:'3 недели', tags:['Python','FastAPI','OpenAI'], remote:true },
+  { id:6, title:'Telegram-бот разработчик (aiogram)', company:'AKU Automation', category:'dev', catLabel:'💻 Разработка', budget:'от 50 000 ₽', deadline:'Срочно', tags:['Python','aiogram','Bot API'], remote:true },
+  { id:7, title:'Видеограф для продуктовых съёмок', company:'Shop Luxe', category:'video', catLabel:'🎬 Видео', budget:'от 60 000 ₽', deadline:'Гибко', tags:['Sony A7','Монтаж','Студия'], remote:false },
+  { id:8, title:'Таргетолог VK + Telegram Ads', company:'GrowthHack', category:'marketing', catLabel:'📣 Маркетинг', budget:'от 40 000 ₽', deadline:'Сразу', tags:['VK Ads','Telegram Ads','Аналитика'], remote:true },
+];
+
+const FREELANCERS = [
+  { id:1, name:'Арина Савельева', role:'UI/UX Designer', exp:'4 года', rate:'от 3 000 ₽/час', skills:['Figma','Prototyping','Design Systems'], rating:4.9, reviews:47, pro:true, emoji:'👩‍🎨' },
+  { id:2, name:'Марк Ивлев', role:'Full-Stack Developer', exp:'6 лет', rate:'от 4 500 ₽/час', skills:['React','Node.js','PostgreSQL'], rating:5.0, reviews:82, pro:true, emoji:'👨‍💻' },
+  { id:3, name:'Диана Кох', role:'Motion Designer', exp:'3 года', rate:'от 2 500 ₽/час', skills:['After Effects','Cinema 4D','Reels'], rating:4.8, reviews:34, pro:true, emoji:'🎬' },
+  { id:4, name:'Степан Ларин', role:'SMM & Таргетолог', exp:'5 лет', rate:'от 2 000 ₽/час', skills:['VK Ads','Meta','Telegram'], rating:4.7, reviews:29, pro:false, emoji:'📊' },
+  { id:5, name:'Ксения Волк', role:'Brand & Graphic Designer', exp:'2 года', rate:'от 1 800 ₽/час', skills:['Illustrator','Photoshop','Branding'], rating:4.9, reviews:18, pro:false, emoji:'🎨' },
+  { id:6, name:'Олег Петров', role:'AI & Automation Engineer', exp:'4 года', rate:'от 5 000 ₽/час', skills:['Python','LangChain','Telegram Bots'], rating:5.0, reviews:41, pro:true, emoji:'🤖' },
+];
+
+// ── RENDER JOBS ──────────────────────────────────────────────────────
+function renderJobs(filter='all') {
+  const grid = document.getElementById('jobsGrid');
+  const list = filter === 'all' ? JOBS : JOBS.filter(j => j.category === filter);
+  if (!list.length) { grid.innerHTML = '<p style="color:#444;text-align:center;padding:40px 0;font-size:13px;">Вакансий не найдено</p>'; return; }
+  grid.innerHTML = list.map(j => `
+    <div class="premium-card rounded-2xl p-4 cursor-pointer" style="animation:slide-up .3s ease both;">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1 pr-2">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="badge-cat">${j.catLabel}</span>
+            ${j.remote ? '<span style="font-size:10px;color:#22c55e;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:4px;padding:2px 7px;">Remote</span>' : ''}
+          </div>
+          <div class="font-display font-semibold text-silver text-sm leading-snug">${j.title}</div>
+        </div>
+        <div style="width:38px;height:38px;flex-shrink:0;background:linear-gradient(135deg,#222,#2a2a2a);border:1px solid rgba(192,192,192,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;">🏢</div>
+      </div>
+      <div class="text-xs mb-3" style="color:#666;">${j.company}</div>
+      <div class="flex flex-wrap gap-1.5 mb-4">
+        ${j.tags.map(t => `<span style="font-size:10px;color:#666;background:rgba(255,255,255,0.03);border:1px solid rgba(192,192,192,0.08);border-radius:4px;padding:2px 7px;">${t}</span>`).join('')}
+      </div>
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="font-semibold text-sm" style="color:#D4AF37;">${j.budget}</div>
+          <div style="font-size:10px;color:#555;">${j.deadline}</div>
+        </div>
+        <button onclick="applyJob(${j.id})" class="btn-chrome px-5 py-2 rounded-xl text-xs font-semibold" style="font-family:'Syne',sans-serif;letter-spacing:.04em;">ОТКЛИКНУТЬСЯ</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── RENDER FREELANCERS ───────────────────────────────────────────────
+function renderFreelancers() {
+  const grid = document.getElementById('proGrid');
+  grid.innerHTML = FREELANCERS.map(f => `
+    <div class="${f.pro ? 'pro-card' : 'premium-card'} rounded-2xl p-4 cursor-pointer" style="background:#1A1A1A;animation:slide-up .3s ease both;">
+      <div class="flex items-center gap-3 mb-3">
+        ${f.pro
+          ? `<div class="avatar-ring"><div style="width:46px;height:46px;background:#111;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;">${f.emoji}</div></div>`
+          : `<div style="width:46px;height:46px;background:linear-gradient(135deg,#1e1e1e,#2a2a2a);border:1px solid rgba(192,192,192,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;">${f.emoji}</div>`
+        }
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <span class="font-display font-bold text-silver text-sm">${f.name}</span>
+            ${f.pro ? '<span class="badge-pro">PRO</span>' : ''}
+          </div>
+          <div style="font-size:12px;color:#666;">${f.role} · ${f.exp}</div>
+        </div>
+        <div class="text-right">
+          <div style="font-size:12px;color:#D4AF37;font-weight:600;">${f.rate}</div>
+          <div style="font-size:10px;color:#555;">⭐ ${f.rating} (${f.reviews})</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-1.5 mb-3">
+        ${f.skills.map(s => `<span style="font-size:10px;color:#666;background:rgba(255,255,255,0.03);border:1px solid rgba(192,192,192,0.08);border-radius:4px;padding:2px 7px;">${s}</span>`).join('')}
+      </div>
+      <button onclick="contactFreelancer('${f.name}')" class="w-full py-2.5 rounded-xl text-xs font-semibold transition-all" style="${f.pro ? 'background:linear-gradient(135deg,#252525,#1e1e1e);border:1px solid rgba(192,192,192,0.25);color:#d4d4d4;font-family:Syne,sans-serif;letter-spacing:.04em;' : 'background:transparent;border:1px solid rgba(192,192,192,0.1);color:#666;font-family:Syne,sans-serif;letter-spacing:.04em;'}">СВЯЗАТЬСЯ</button>
+    </div>
+  `).join('');
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  document.getElementById('mainContent').scrollTop = 0;
+}
+
+// ── FILTERS ──────────────────────────────────────────────────────────
+function filterJobs(btn, filter) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderJobs(filter);
+}
+
+// ── POST TOGGLE ──────────────────────────────────────────────────────
+function togglePostType(type) {
+  const jobBtn = document.getElementById('postToggleJob');
+  const resBtn = document.getElementById('postToggleResume');
+  const active = 'background:linear-gradient(135deg,#252525,#1e1e1e);border:1px solid rgba(192,192,192,0.2);color:#E8E8E8;';
+  const inactive = 'background:transparent;border:1px solid transparent;color:#555;';
+  jobBtn.style.cssText = type==='job' ? active : inactive;
+  resBtn.style.cssText = type==='resume' ? active : inactive;
+  showToast(type==='job' ? '💼 Режим: публикация вакансии' : '🧑‍💻 Режим: публикация резюме');
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────────
+function applyJob(id) {
+  const job = JOBS.find(j => j.id===id);
+  showToast(`✅ Отклик на "${job.title.slice(0,28)}..." отправлен!`);
+}
+function contactFreelancer(name) {
+  showToast(`💬 Открываем чат с ${name}...`);
+}
+function contactFounder() {
+  showToast('🚀 Переход к основателю AKU...');
+  if (window.Telegram?.WebApp?.openTelegramLink) {
+    setTimeout(() => window.Telegram.WebApp.openTelegramLink('https://t.me/aku_founder'), 600);
+  }
+}
+function handlePost() {
+  showToast('🎉 Объявление опубликовано!');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(12px)';
+  }, 2500);
+}
+
+// ── TELEGRAM INIT ─────────────────────────────────────────────────────
+if (window.Telegram?.WebApp) {
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+  if (tg.colorScheme === 'dark' || true) {
+    document.body.classList.add('tg-theme');
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────
+renderJobs();
+renderFreelancers();
+</script>
+</body>
+</html>
