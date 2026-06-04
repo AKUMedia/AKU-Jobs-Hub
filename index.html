@@ -459,6 +459,141 @@ select.form-input option{background:var(--card);}
 /* ─── LOADING STATES ─── */
 .btn-submit.loading{opacity:.7;pointer-events:none;position:relative;}
 #toast.is-error{border-color:rgba(239,68,68,.35);}
+
+/* ─── PROFILE PAGE ─── */
+.profile-hero{
+  display:flex;flex-direction:column;align-items:center;
+  padding:28px 20px 20px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:20px;margin-bottom:14px;
+  position:relative;overflow:hidden;
+}
+.profile-hero::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:80px;
+  background:linear-gradient(135deg,rgba(212,175,55,.07),rgba(192,192,192,.04));
+  pointer-events:none;
+}
+.profile-ava-wrap{position:relative;margin-bottom:14px;}
+.profile-ava{
+  width:72px;height:72px;border-radius:50%;
+  object-fit:cover;display:block;
+  border:2px solid rgba(192,192,192,.2);
+}
+.profile-ava-fallback{
+  width:72px;height:72px;border-radius:50%;
+  background:linear-gradient(135deg,#2a2a2a,#1a1a1a);
+  border:2px solid rgba(192,192,192,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:800;color:var(--chrome);
+  background:linear-gradient(135deg,#252525,#1e1e1e);
+  font-family:'Inter',sans-serif;letter-spacing:-.5px;
+}
+.profile-ava-ring{
+  position:absolute;inset:-3px;border-radius:50%;
+  background:var(--chrome);background-size:200% auto;
+  animation:shimmer 3s linear infinite;z-index:-1;
+}
+.profile-name{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.3px;margin-bottom:2px;}
+.profile-username{font-size:12px;color:var(--text3);margin-bottom:16px;}
+.profile-id-badge{
+  font-size:10px;color:var(--text3);
+  background:var(--card2);border:1px solid var(--border);
+  border-radius:6px;padding:3px 10px;margin-bottom:0;
+  font-family:'Inter',monospace;letter-spacing:.04em;
+}
+
+/* Role switcher */
+.role-section{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:18px;margin-bottom:14px;
+}
+.role-section-title{
+  font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text3);margin-bottom:12px;
+}
+.role-toggle{
+  display:flex;gap:4px;padding:4px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+}
+.role-btn{
+  flex:1;padding:10px 6px;border-radius:9px;font-size:12px;font-weight:600;
+  text-align:center;transition:all .2s;color:var(--text2);background:transparent;
+  border:1px solid transparent;line-height:1.3;
+}
+.role-btn.active{
+  background:var(--card);border-color:var(--border-hi);color:var(--text);
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+.role-btn.active.role-freelancer{border-color:rgba(34,197,94,.3);color:#22c55e;}
+.role-btn.active.role-client{border-color:rgba(59,130,246,.3);color:#60a5fa;}
+.role-btn.active.role-admin{border-color:rgba(239,68,68,.3);color:#f87171;}
+.role-desc{
+  font-size:11px;color:var(--text3);line-height:1.5;
+  margin-top:10px;padding:10px 12px;
+  background:rgba(255,255,255,.02);border-radius:8px;
+  border:1px solid var(--border);
+}
+[data-theme="light"] .role-desc{background:rgba(0,0,0,.025);}
+
+/* Profile stats row */
+.profile-stats{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;
+}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:14px;text-align:center;
+}
+.stat-num{font-size:20px;font-weight:800;color:var(--accent);letter-spacing:-.5px;}
+.stat-lbl{font-size:10px;color:var(--text3);margin-top:2px;font-weight:500;}
+
+/* Admin badge */
+.admin-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:800;letter-spacing:.06em;
+  padding:3px 9px;border-radius:6px;
+  background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);
+  color:#f87171;margin-top:8px;
+}
+
+/* Delete button on job cards */
+.btn-delete{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s,border-color .2s;cursor:pointer;
+}
+.btn-delete:hover{background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.5);}
+.btn-delete:active{transform:scale(.93);}
+.btn-delete svg{width:14px;height:14px;color:#f87171;stroke:#f87171;}
+
+/* Role-locked post overlay */
+.locked-post{
+  display:flex;flex-direction:column;align-items:center;
+  padding:48px 24px;text-align:center;
+}
+.locked-icon{font-size:44px;margin-bottom:14px;opacity:.5;}
+.locked-title{font-size:15px;font-weight:700;color:var(--text2);margin-bottom:6px;}
+.locked-sub{font-size:12px;color:var(--text3);line-height:1.55;margin-bottom:20px;}
+.btn-switch-role{
+  padding:10px 24px;border-radius:10px;font-size:12px;font-weight:700;
+  background:linear-gradient(135deg,#c9a227,#D4AF37);
+  color:#0D0D0D;border:none;cursor:pointer;
+  box-shadow:0 4px 12px rgba(212,175,55,.3);
+  transition:filter .2s;
+}
+.btn-switch-role:hover{filter:brightness(1.08);}
+
+/* Saving indicator */
+.role-saving{
+  font-size:10px;color:var(--text3);
+  display:none;align-items:center;gap:5px;margin-top:8px;
+}
+.role-saving.show{display:flex;}
+.role-saving-dot{
+  width:6px;height:6px;border-radius:50%;
+  border:1.5px solid var(--text3);border-top-color:transparent;
+  animation:spin .6s linear infinite;
+}
 </style>
 </head>
 
