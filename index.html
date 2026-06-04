@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <title>AKU Jobs Hub</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 
@@ -437,6 +438,27 @@ select.form-input option{background:var(--card);}
 
 /* ─── EMPTY STATE ─── */
 .empty{text-align:center;padding:40px 0;color:var(--text3);font-size:13px;}
+
+/* ─── SKELETON LOADER ─── */
+@keyframes skeletonPulse{0%,100%{opacity:.35}50%{opacity:.7}}
+.skeleton-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:15px;margin-bottom:10px;}
+.sk-badge{width:72px;height:18px;border-radius:8px;background:var(--card2);animation:skeletonPulse 1.4s ease-in-out infinite;margin-bottom:10px;}
+.sk-line{height:12px;border-radius:6px;background:var(--card2);animation:skeletonPulse 1.4s ease-in-out infinite;}
+.sk-title{width:82%;height:14px;margin-bottom:8px;}
+.sk-sub{width:38%;height:10px;}
+.sk-row{display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
+.sk-budget{width:90px;height:14px;border-radius:6px;background:var(--card2);animation:skeletonPulse 1.4s ease-in-out infinite;}
+.sk-btn{width:100px;height:32px;border-radius:9px;background:var(--card2);animation:skeletonPulse 1.4s ease-in-out infinite;}
+
+/* ─── EMPTY JOBS BANNER ─── */
+.empty-jobs{display:flex;flex-direction:column;align-items:center;padding:48px 20px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius);margin-top:8px;}
+.empty-jobs-icon{font-size:40px;margin-bottom:12px;opacity:.4;}
+.empty-jobs-title{font-size:15px;font-weight:700;color:var(--text2);margin-bottom:6px;}
+.empty-jobs-sub{font-size:12px;color:var(--text3);line-height:1.55;}
+
+/* ─── LOADING STATES ─── */
+.btn-submit.loading{opacity:.7;pointer-events:none;position:relative;}
+#toast.is-error{border-color:rgba(239,68,68,.35);}
 </style>
 </head>
 
@@ -617,19 +639,24 @@ select.form-input option{background:var(--card);}
 <div id="toast"></div>
 
 <script>
-// ─── DATA ────────────────────────────────────────────────────────
-const JOBS=[
-  {id:1,title:'UI/UX дизайнер для мобильного приложения',company:'TechFlow',cat:'design',catLabel:'🎨 Дизайн',budget:'от 45 000 ₽',deadline:'Срочно',tags:['Figma','Mobile','Prototype'],remote:true},
-  {id:2,title:'Frontend-разработчик React / Next.js',company:'Startup XY',cat:'dev',catLabel:'💻 Разработка',budget:'от 80 000 ₽',deadline:'2 недели',tags:['React','TypeScript','Tailwind'],remote:true},
-  {id:3,title:'SMM-менеджер для beauty-бренда',company:'Glamour Co',cat:'marketing',catLabel:'📣 Маркетинг',budget:'25 000 ₽/мес',deadline:'Постоянно',tags:['Instagram','Reels','Контент'],remote:true},
-  {id:4,title:'Motion-дизайнер для Reels и TikTok',company:'AKU Media',cat:'video',catLabel:'🎬 Видео',budget:'от 35 000 ₽',deadline:'1 неделя',tags:['After Effects','TikTok','Reels'],remote:true},
-  {id:5,title:'Python-разработчик для AI-проекта',company:'NeuralLab',cat:'dev',catLabel:'💻 Разработка',budget:'от 100 000 ₽',deadline:'3 недели',tags:['Python','FastAPI','OpenAI'],remote:true},
-  {id:6,title:'Разработчик Telegram-ботов (aiogram)',company:'AKU Automation',cat:'dev',catLabel:'💻 Разработка',budget:'от 50 000 ₽',deadline:'Срочно',tags:['Python','aiogram','Bot API'],remote:true},
-  {id:7,title:'Видеограф для продуктовых съёмок',company:'Shop Luxe',cat:'video',catLabel:'🎬 Видео',budget:'от 60 000 ₽',deadline:'Гибко',tags:['Sony A7','Монтаж','Студия'],remote:false},
-  {id:8,title:'Таргетолог VK + Telegram Ads',company:'GrowthHack',cat:'marketing',catLabel:'📣 Маркетинг',budget:'от 40 000 ₽',deadline:'Сразу',tags:['VK Ads','Telegram Ads','Аналитика'],remote:true},
-];
+// ════════════════════════════════════════════════════════════════
+//  SUPABASE INIT
+// ════════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://wsizgctvtazcpwykffbs.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzaXpnY3R2dGF6Y3B3eWtmZmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NjMyMjksImV4cCI6MjA5NjEzOTIyOX0.US3Kjh_eFKh-6GtxY738-Sj-vmGO1X22SUxX0OtcPZs';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const FREELANCERS=[
+// ════════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════════
+let allJobs     = [];   // кэш всех вакансий из Supabase
+let activeFilter = 'all';
+let postType    = 'job';
+let isPosting   = false;
+
+// Статичные данные — фрилансеры (Шаг 2 — вынесем в БД)
+const FREELANCERS = [
   {id:1,name:'Арина Савельева',role:'UI/UX дизайнер',exp:'4 года',rate:'от 3 000 ₽/час',skills:['Figma','Prototyping','Design Systems'],rating:4.9,reviews:47,pro:true,emoji:'👩‍🎨'},
   {id:2,name:'Марк Ивлев',role:'Full-Stack разработчик',exp:'6 лет',rate:'от 4 500 ₽/час',skills:['React','Node.js','PostgreSQL'],rating:5.0,reviews:82,pro:true,emoji:'👨‍💻'},
   {id:3,name:'Диана Кох',role:'Motion-дизайнер',exp:'3 года',rate:'от 2 500 ₽/час',skills:['After Effects','Cinema 4D','Reels'],rating:4.8,reviews:34,pro:true,emoji:'🎬'},
@@ -638,113 +665,222 @@ const FREELANCERS=[
   {id:6,name:'Олег Петров',role:'AI и автоматизация',exp:'4 года',rate:'от 5 000 ₽/час',skills:['Python','LangChain','Telegram Боты'],rating:5.0,reviews:41,pro:true,emoji:'🤖'},
 ];
 
-// ─── TELEGRAM ────────────────────────────────────────────────────
-const TG = window.Telegram?.WebApp;
-if(TG){TG.ready();TG.expand();}
+// Карта категорий: значение select → { label, icon, filter-key }
+const CAT_MAP = {
+  '🎨 Дизайн':            { label:'🎨 Дизайн',      key:'design'    },
+  '💻 Разработка':        { label:'💻 Разработка',   key:'dev'       },
+  '📣 Маркетинг':         { label:'📣 Маркетинг',    key:'marketing' },
+  '🎬 Видео / Контент':   { label:'🎬 Видео',        key:'video'     },
+  '🤖 AI / Автоматизация':{ label:'🤖 AI / Авто',   key:'ai'        },
+  '✍️ Копирайтинг':       { label:'✍️ Копирайтинг', key:'copy'      },
+};
 
-function haptic(type){
-  if(!TG)return;
-  try{
-    if(type==='light')TG.HapticFeedback.impactOccurred('light');
-    else if(type==='medium')TG.HapticFeedback.impactOccurred('medium');
-    else if(type==='success')TG.HapticFeedback.notificationOccurred('success');
-    else if(type==='error')TG.HapticFeedback.notificationOccurred('error');
-  }catch(e){}
+// ════════════════════════════════════════════════════════════════
+//  TELEGRAM
+// ════════════════════════════════════════════════════════════════
+const TG = window.Telegram?.WebApp;
+if (TG) { TG.ready(); TG.expand(); }
+
+function haptic(type) {
+  if (!TG) return;
+  try {
+    if (type === 'light')    TG.HapticFeedback.impactOccurred('light');
+    else if (type === 'medium')  TG.HapticFeedback.impactOccurred('medium');
+    else if (type === 'success') TG.HapticFeedback.notificationOccurred('success');
+    else if (type === 'error')   TG.HapticFeedback.notificationOccurred('error');
+  } catch(e) {}
 }
 
-// MainButton logic
-function updateMainButton(){
-  if(!TG)return;
-  const onPost=document.getElementById('page-post').classList.contains('active');
-  const filled=isFormFilled();
-  if(onPost&&filled){
-    TG.MainButton.setParams({text:'Опубликовать объявление',color:'#D4AF37',text_color:'#0D0D0D',is_visible:true});
-    TG.MainButton.onClick(handlePost);
+// ─── MainButton ──────────────────────────────────────────────────
+let mainBtnBound = false;
+function updateMainButton() {
+  if (!TG) return;
+  const onPost  = document.getElementById('page-post').classList.contains('active');
+  const filled  = isFormFilled();
+  if (onPost && filled) {
+    if (!mainBtnBound) {
+      TG.MainButton.onClick(handlePost);
+      mainBtnBound = true;
+    }
+    TG.MainButton.setParams({
+      text: 'Опубликовать вакансию',
+      color: '#D4AF37',
+      text_color: '#0D0D0D',
+      is_visible: true,
+      is_active: !isPosting,
+    });
     TG.MainButton.show();
-  }else{
+  } else {
     TG.MainButton.hide();
   }
 }
 
-// ─── THEME ───────────────────────────────────────────────────────
-let isDark=true;
-function toggleTheme(){
-  isDark=!isDark;
-  document.documentElement.setAttribute('data-theme',isDark?'dark':'light');
-  const icon=document.getElementById('themeIcon');
-  if(isDark){
-    icon.innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
-  }else{
-    icon.innerHTML='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
-  }
+// ════════════════════════════════════════════════════════════════
+//  THEME
+// ════════════════════════════════════════════════════════════════
+let isDark = true;
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  const icon = document.getElementById('themeIcon');
+  icon.innerHTML = isDark
+    ? '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
+    : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
   haptic('light');
 }
 
-// ─── NAVIGATION ──────────────────────────────────────────────────
-function switchTab(name,btn){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.nav-add-inner').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  if(btn){
-    if(btn.classList.contains('nav-add-inner'))btn.classList.add('active');
-    else btn.classList.add('active');
+// ════════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-add-inner').forEach(b => b.classList.remove('active'));
+
+  document.getElementById('page-' + name).classList.add('active');
+  if (btn) {
+    btn.classList.contains('nav-add-inner')
+      ? btn.classList.add('active')
+      : btn.classList.add('active');
   }
-  document.getElementById('page-'+name).scrollTop=0;
+  document.getElementById('page-' + name).scrollTop = 0;
   haptic('light');
+
+  // При переключении на «Лента» — перезагружаем вакансии
+  if (name === 'jobs') loadJobs();
   updateMainButton();
 }
 
-// ─── JOBS ────────────────────────────────────────────────────────
-function renderJobs(filter='all'){
-  const list=filter==='all'?JOBS:JOBS.filter(j=>j.cat===filter);
-  const el=document.getElementById('jobsList');
-  if(!list.length){el.innerHTML='<div class="empty">Вакансий не найдено</div>';return;}
-  el.innerHTML=list.map((j,i)=>`
-    <div class="card" style="animation-delay:${i*40}ms">
-      <div class="card-top">
-        <div>
-          <div class="card-meta">
-            <span class="badge">${j.catLabel}</span>
-            ${j.remote?'<span class="badge badge-remote">Удалённо</span>':''}
-          </div>
-          <div class="card-title">${j.title}</div>
-        </div>
-        <div class="card-icon">🏢</div>
-      </div>
-      <div class="card-company">${j.company}</div>
-      <div class="tags">${j.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
-      <div class="card-bottom">
-        <div>
-          <div class="card-budget">${j.budget}</div>
-          <div class="card-deadline">${j.deadline}</div>
-        </div>
-        <button class="btn-apply" onclick="applyJob(${j.id})">ОТКЛИКНУТЬСЯ</button>
+// ════════════════════════════════════════════════════════════════
+//  SUPABASE — ЗАГРУЗКА ВАКАНСИЙ
+// ════════════════════════════════════════════════════════════════
+async function loadJobs() {
+  renderJobsSkeleton();  // показываем скелетон пока грузим
+
+  const { data, error } = await db
+    .from('jobs')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Supabase loadJobs error:', error);
+    showToast('⚠️ Не удалось загрузить вакансии', true);
+    document.getElementById('jobsList').innerHTML =
+      `<div class="empty-jobs">
+        <div class="empty-jobs-icon">⚠️</div>
+        <div class="empty-jobs-title">Ошибка загрузки</div>
+        <div class="empty-jobs-sub">Проверьте подключение и попробуйте снова</div>
+       </div>`;
+    return;
+  }
+
+  allJobs = data || [];
+  renderJobs(activeFilter);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RENDER — СКЕЛЕТОН
+// ════════════════════════════════════════════════════════════════
+function renderJobsSkeleton(count = 4) {
+  const el = document.getElementById('jobsList');
+  el.innerHTML = Array.from({ length: count }).map(() => `
+    <div class="skeleton-card">
+      <div class="sk-badge"></div>
+      <div class="sk-line sk-title"></div>
+      <div class="sk-line sk-sub"></div>
+      <div class="sk-row">
+        <div class="sk-budget"></div>
+        <div class="sk-btn"></div>
       </div>
     </div>`).join('');
 }
 
-function filterJobs(btn,filter){
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+// ════════════════════════════════════════════════════════════════
+//  RENDER — ВАКАНСИИ ИЗ SUPABASE
+// ════════════════════════════════════════════════════════════════
+function renderJobs(filter = 'all') {
+  activeFilter = filter;
+  const el = document.getElementById('jobsList');
+
+  // фильтруем по ключу категории
+  const list = filter === 'all'
+    ? allJobs
+    : allJobs.filter(j => {
+        const meta = CAT_MAP[j.category];
+        return meta && meta.key === filter;
+      });
+
+  if (!list.length) {
+    el.innerHTML = `
+      <div class="empty-jobs">
+        <div class="empty-jobs-icon">📭</div>
+        <div class="empty-jobs-title">Пока нет активных вакансий</div>
+        <div class="empty-jobs-sub">Станьте первым — разместите задачу<br>во вкладке «Разместить»</div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = list.map((j, i) => {
+    const meta    = CAT_MAP[j.category] || { label: j.category || '📋 Другое' };
+    const timeAgo = formatDate(j.created_at);
+    // Контакт — кнопка-ссылка если @username
+    const contactHref = j.contacts
+      ? (j.contacts.startsWith('@')
+          ? `https://t.me/${j.contacts.slice(1)}`
+          : `https://t.me/${j.contacts}`)
+      : '#';
+
+    return `
+    <div class="card" style="animation-delay:${i * 40}ms">
+      <div class="card-top">
+        <div style="flex:1;min-width:0;">
+          <div class="card-meta">
+            <span class="badge">${meta.label}</span>
+            <span class="badge badge-remote">Удалённо</span>
+          </div>
+          <div class="card-title">${escHtml(j.title)}</div>
+        </div>
+        <div class="card-icon">🏢</div>
+      </div>
+      ${j.description
+        ? `<div class="card-company" style="line-height:1.5;-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;">${escHtml(j.description)}</div>`
+        : ''}
+      <div class="card-bottom" style="margin-top:${j.description?'10px':'4px'}">
+        <div>
+          <div class="card-budget">${escHtml(j.budget || '—')}</div>
+          <div class="card-deadline">${timeAgo}</div>
+        </div>
+        <a href="${contactHref}" target="_blank" rel="noopener"
+           class="btn-apply" onclick="haptic('success')" style="text-decoration:none;">
+          ОТКЛИКНУТЬСЯ
+        </a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterJobs(btn, filter) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   btn.classList.add('active');
   haptic('light');
   renderJobs(filter);
 }
 
-// ─── FREELANCERS ─────────────────────────────────────────────────
-function renderFreelancers(){
-  const el=document.getElementById('proList');
-  el.innerHTML=FREELANCERS.map((f,i)=>`
-    <div class="card pro-card${f.pro?' is-pro':''}" style="animation-delay:${i*40}ms">
+// ════════════════════════════════════════════════════════════════
+//  RENDER — ФРИЛАНСЕРЫ (статика)
+// ════════════════════════════════════════════════════════════════
+function renderFreelancers() {
+  const el = document.getElementById('proList');
+  el.innerHTML = FREELANCERS.map((f, i) => `
+    <div class="card pro-card${f.pro ? ' is-pro' : ''}" style="animation-delay:${i * 40}ms">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
         ${f.pro
-          ?`<div class="avatar-ring"><div class="avatar-inner">${f.emoji}</div></div>`
-          :`<div class="avatar">${f.emoji}</div>`
-        }
+          ? `<div class="avatar-ring"><div class="avatar-inner">${f.emoji}</div></div>`
+          : `<div class="avatar">${f.emoji}</div>`}
         <div class="pro-info">
           <div style="display:flex;align-items:center;gap:6px;">
             <span class="pro-name">${f.name}</span>
-            ${f.pro?'<span class="badge-pro">PRO</span>':''}
+            ${f.pro ? '<span class="badge-pro">PRO</span>' : ''}
           </div>
           <div class="pro-role">${f.role} · ${f.exp}</div>
         </div>
@@ -753,70 +889,131 @@ function renderFreelancers(){
           <div class="pro-rating">⭐ ${f.rating} (${f.reviews})</div>
         </div>
       </div>
-      <div class="tags">${f.skills.map(s=>`<span class="tag">${s}</span>`).join('')}</div>
-      <button class="btn-contact${f.pro?' pro':''}" onclick="contactFreelancer('${f.name}')">НАПИСАТЬ</button>
+      <div class="tags">${f.skills.map(s => `<span class="tag">${s}</span>`).join('')}</div>
+      <button class="btn-contact${f.pro ? ' pro' : ''}" onclick="contactFreelancer('${f.name}')">НАПИСАТЬ</button>
     </div>`).join('');
 }
 
-// ─── POST FORM ───────────────────────────────────────────────────
-let postType='job';
-function togglePostType(type){
-  postType=type;
-  const j=document.getElementById('togJob');
-  const r=document.getElementById('togResume');
-  j.classList.toggle('active',type==='job');
-  r.classList.toggle('active',type==='resume');
-  document.getElementById('budgetLabel').textContent=type==='job'?'Бюджет':'Ставка';
+// ════════════════════════════════════════════════════════════════
+//  ФОРМА «РАЗМЕСТИТЬ» — ПЕРЕКЛЮЧЕНИЕ ТИПА
+// ════════════════════════════════════════════════════════════════
+function togglePostType(type) {
+  postType = type;
+  document.getElementById('togJob').classList.toggle('active', type === 'job');
+  document.getElementById('togResume').classList.toggle('active', type === 'resume');
+  document.getElementById('budgetLabel').textContent = type === 'job' ? 'Бюджет' : 'Ставка';
   haptic('light');
   updateMainButton();
 }
 
-function isFormFilled(){
-  return document.getElementById('fTitle').value.trim()!==''
-    &&document.getElementById('fCategory').value!==''
-    &&document.getElementById('fContact').value.trim()!=='';
+function isFormFilled() {
+  return document.getElementById('fTitle').value.trim() !== ''
+    && document.getElementById('fCategory').value !== ''
+    && document.getElementById('fContact').value.trim() !== '';
 }
-function checkForm(){updateMainButton();}
+function checkForm() { updateMainButton(); }
 
-function handlePost(){
-  if(!isFormFilled()){
-    showToast('⚠️ Заполни заголовок, категорию и контакт');
+// ════════════════════════════════════════════════════════════════
+//  SUPABASE — ПУБЛИКАЦИЯ ВАКАНСИИ
+// ════════════════════════════════════════════════════════════════
+async function handlePost() {
+  if (!isFormFilled()) {
+    showToast('⚠️ Заполни заголовок, категорию и контакт', true);
     haptic('error');
     return;
   }
+  if (isPosting) return;
+
+  isPosting = true;
+  const btn = document.getElementById('submitBtn');
+  btn.classList.add('loading');
+  btn.textContent = 'Публикуем...';
+  if (TG) TG.MainButton.showProgress(false);
+
+  const payload = {
+    title:       document.getElementById('fTitle').value.trim(),
+    category:    document.getElementById('fCategory').value,
+    budget:      document.getElementById('fBudget').value.trim() || null,
+    description: document.getElementById('fDesc').value.trim()   || null,
+    contacts:    document.getElementById('fContact').value.trim(),
+  };
+
+  const { error } = await db.from('jobs').insert([payload]);
+
+  isPosting = false;
+  btn.classList.remove('loading');
+  btn.textContent = 'ОПУБЛИКОВАТЬ';
+  if (TG) TG.MainButton.hideProgress();
+
+  if (error) {
+    console.error('Supabase insert error:', error);
+    showToast('❌ Ошибка при публикации. Попробуй ещё раз.', true);
+    haptic('error');
+    return;
+  }
+
+  // Успех
   haptic('success');
-  showToast('🎉 Объявление опубликовано!');
-  document.getElementById('fTitle').value='';
-  document.getElementById('fCategory').value='';
-  document.getElementById('fBudget').value='';
-  document.getElementById('fDesc').value='';
-  document.getElementById('fContact').value='';
+  showToast('🎉 Вакансия опубликована!');
+
+  // Сброс формы
+  ['fTitle','fBudget','fDesc','fContact'].forEach(id =>
+    document.getElementById(id).value = '');
+  document.getElementById('fCategory').value = '';
   updateMainButton();
+
+  // Переход на «Ленту» и обновление данных
+  const navBtn = document.querySelector('[data-tab="jobs"]');
+  switchTab('jobs', navBtn);
 }
 
-// ─── ACTIONS ─────────────────────────────────────────────────────
-function applyJob(id){
-  const j=JOBS.find(x=>x.id===id);
-  haptic('success');
-  showToast(`✅ Отклик на «${j.title.slice(0,26)}...» отправлен`);
+// ════════════════════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════════════════════
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function contactFreelancer(name){
+
+function formatDate(isoStr) {
+  if (!isoStr) return '';
+  const diff = Date.now() - new Date(isoStr).getTime();
+  const min  = Math.floor(diff / 60000);
+  const hr   = Math.floor(diff / 3600000);
+  const day  = Math.floor(diff / 86400000);
+  if (min < 2)   return 'только что';
+  if (min < 60)  return `${min} мин. назад`;
+  if (hr  < 24)  return `${hr} ч. назад`;
+  if (day < 7)   return `${day} дн. назад`;
+  return new Date(isoStr).toLocaleDateString('ru-RU', { day:'numeric', month:'short' });
+}
+
+function contactFreelancer(name) {
   haptic('medium');
   showToast(`💬 Открываем чат с ${name}...`);
 }
 
-// ─── TOAST ───────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════════════════════
 let toastTimer;
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.remove('show', 'is-error');
+  if (isError) t.classList.add('is-error');
+  // Force reflow so animation restarts
+  void t.offsetWidth;
+  t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-// ─── INIT ────────────────────────────────────────────────────────
-renderJobs();
-renderFreelancers();
+// ════════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════════
+loadJobs();          // сразу загружаем вакансии из Supabase
+renderFreelancers(); // фрилансеры — статика
 updateMainButton();
 </script>
 </body>
