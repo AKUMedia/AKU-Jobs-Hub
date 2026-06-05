@@ -8,14 +8,19 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <title>AKU Jobs Hub</title>
 <script>
-// Мгновенная проверка соглашения ДО рендера — предотвращает мелькание
+// Удаление onboarding из DOM ДО рендера — нулевое мерцание
 (function(){
   try {
     if (localStorage.getItem('rules_accepted') === 'true') {
-      // Скрываем onboarding через inline-стиль на элемент до его рендера
+      // Добавляем CSS-правило немедленно
+      var s = document.createElement('style');
+      s.textContent = '#onboarding-screen{display:none!important}';
+      document.head.appendChild(s);
+      // После DOMContentLoaded — окончательно убираем из DOM
       document.addEventListener('DOMContentLoaded', function() {
         var ob = document.getElementById('onboarding-screen');
-        if (ob) ob.style.display = 'none';
+        if (ob && ob.parentNode) ob.parentNode.removeChild(ob);
+        s.parentNode && s.parentNode.removeChild(s);
       });
     }
   } catch(e) {}
@@ -132,6 +137,25 @@ a{text-decoration:none;color:inherit;}
 .badge-remote{border-color:rgba(34,197,94,.25);color:var(--green);background:rgba(34,197,94,.06);}
 .badge-arch{border-color:rgba(255,165,0,.25);color:#f59e0b;background:rgba(255,165,0,.06);}
 .badge-top{border-color:rgba(212,175,55,.5);color:#D4AF37;background:rgba(212,175,55,.1);font-weight:800;}
+/* Lightning animation for TOP badge */
+@keyframes lightning{0%,90%,100%{opacity:1;transform:scale(1)}95%{opacity:.6;transform:scale(1.2)}}
+.badge-top-icon{display:inline-block;animation:lightning 2.5s ease-in-out infinite;}
+/* Vacancy limit modal */
+#vacLimitModal .modal-sheet{background:linear-gradient(160deg,#141010 0%,#1A1A1A 60%);}
+.pay-option{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color .2s,box-shadow .2s;}
+.pay-option:hover{border-color:rgba(212,175,55,.35);box-shadow:0 0 12px rgba(212,175,55,.08);}
+.pay-option-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.pay-option-price{font-size:11px;color:var(--accent);font-weight:600;}
+.pay-option-desc{font-size:11px;color:var(--text3);margin-top:2px;}
+.btn-pay{width:100%;padding:14px;border-radius:12px;font-size:13.5px;font-weight:800;
+  letter-spacing:.05em;background:linear-gradient(135deg,#c9a227,#D4AF37,#e8c84a);
+  color:#0D0D0D;border:none;margin-top:4px;
+  box-shadow:0 4px 18px rgba(212,175,55,.3);transition:filter .2s,transform .2s;cursor:pointer;}
+.btn-pay:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.btn-pay:active{transform:scale(.99);}
+.btn-pay:disabled{opacity:.4;cursor:not-allowed;filter:none;transform:none;}
+/* Stars icon */
+.stars-ico{display:inline-block;margin-right:4px;}
 /* Pinned / TOP card */
 .card.is-pinned{border-color:rgba(212,175,55,.35);box-shadow:0 0 0 1px rgba(212,175,55,.2),inset 0 1px 0 rgba(212,175,55,.08);}
 .card.is-pinned:hover{border-color:rgba(212,175,55,.6);box-shadow:0 0 0 1px rgba(212,175,55,.35),0 8px 24px rgba(212,175,55,.12);}
@@ -644,7 +668,7 @@ select.form-input option{background:var(--card);}
         </div>
         <div class="pin-toggle-label">
           <div class="pin-toggle-title">⚡ Закрепить вакансию в ТОП</div>
-          <div class="pin-toggle-sub">Стоимость: 5 USDT · Показывается первой в ленте</div>
+          <div class="pin-toggle-sub">⭐ 250 Telegram Stars (~5 USDT) · Топ на 72 часа</div>
         </div>
       </div>
 
@@ -803,6 +827,36 @@ select.form-input option{background:var(--card);}
   </div>
 </div>
 
+<!-- ════ VACANCY LIMIT MODAL ════ -->
+<div class="modal-overlay" id="vacLimitModal">
+  <div class="modal-sheet" style="position:relative;">
+    <div class="modal-handle"></div>
+    <button class="btn-modal-close" onclick="closeVacModal()">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div style="text-align:center;font-size:42px;margin-bottom:12px;">📋</div>
+    <div class="modal-title" style="text-align:center;">Лимит бесплатных вакансий</div>
+    <div class="modal-sub" style="text-align:center;margin-top:6px;margin-bottom:16px;">
+      У вас уже <strong>2 активные вакансии</strong> — это бесплатный лимит.<br/>
+      Для следующего размещения выберите тариф:
+    </div>
+    <div class="pay-option" id="vopt-vacancy_30d" onclick="selectVacOption('vacancy_30d');highlightOption(this)">
+      <div class="pay-option-title">📅 Размещение на 30 дней</div>
+      <div class="pay-option-price">⭐ 150 Telegram Stars (~3 USDT)</div>
+      <div class="pay-option-desc">Стандартное размещение в общей ленте</div>
+    </div>
+    <div class="pay-option" id="vopt-vacancy_top_30d" onclick="selectVacOption('vacancy_top_30d');highlightOption(this)">
+      <div class="pay-option-title">⚡ ТОП-размещение на 30 дней</div>
+      <div class="pay-option-price">⭐ 400 Telegram Stars (~8 USDT)</div>
+      <div class="pay-option-desc">Золотая рамка + закреп в начале ленты 30 дней</div>
+    </div>
+    <button class="btn-pay" id="vacPayBtn" onclick="proceedVacPayment()" disabled>
+      ⭐ ОПЛАТИТЬ ЧЕРЕЗ TELEGRAM STARS
+    </button>
+    <button class="btn-pro-later" onclick="closeVacModal()" style="margin-top:8px;">Отмена</button>
+  </div>
+</div>
+
 <!-- ════ PRO LIMIT MODAL ════ -->
 <div class="modal-overlay" id="proLimitModal">
   <div class="modal-sheet" style="position:relative;">
@@ -810,8 +864,8 @@ select.form-input option{background:var(--card);}
     <div class="pro-limit-ico">🚀</div>
     <div class="modal-title" style="text-align:center;">Лимит бесплатных откликов</div>
     <div class="modal-sub" style="text-align:center;margin-top:6px;">
-      Вы использовали все <strong id="proLimitCount">3</strong> бесплатных отклика.<br/>
-      Активируйте статус PRO, чтобы откликаться без ограничений и получить доступ к эксклюзивным заказам.
+      Вы использовали все <strong id="proLimitCount">3</strong> бесплатных отклика на сегодня.<br/>
+      Активируйте PRO на 30 дней для безлимитных откликов и доступа к эксклюзивным заказам.
     </div>
     <div class="pro-limit-counter" id="proLimitDots"></div>
     <div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:14px;margin-bottom:16px;">
@@ -823,7 +877,7 @@ select.form-input option{background:var(--card);}
         ✅ Значок PRO в профиле
       </div>
     </div>
-    <button class="btn-pro-activate" onclick="activatePro()">💎 АКТИВИРОВАТЬ PRO</button>
+    <button class="btn-pro-activate" onclick="initPayment('pro_30d')">⭐ КУПИТЬ PRO — 450 STARS (~9 USDT)</button>
     <button class="btn-pro-later" onclick="closeProModal()">Позже</button>
   </div>
 </div>
@@ -836,7 +890,17 @@ select.form-input option{background:var(--card);}
 // ════════════════════════════════════════
 const SB_URL  = 'https://wsizgctvtazcpwykffbs.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzaXpnY3R2dGF6Y3B3eWtmZmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NjMyMjksImV4cCI6MjA5NjEzOTIyOX0.US3Kjh_eFKh-6GtxY738-Sj-vmGO1X22SUxX0OtcPZs';
-const BOT_TOKEN = '8887029200:AAELHZa7jTuP3LHj-pNrDMUtrZdheRMC9S0';
+const BOT_TOKEN   = '8887029200:AAELHZa7jTuP3LHj-pNrDMUtrZdheRMC9S0';
+// 🔧 ЗАМЕНИ на URL своего бэкенда (Render, Railway, VPS)
+const BACKEND_URL = 'https://your-bot-backend.onrender.com';
+
+// Тарифы (Stars)
+const TARIFFS = {
+  vacancy_30d:     { stars: 150,  label: 'Размещение вакансии на 30 дней',   desc: 'Стандартное размещение' },
+  vacancy_top_30d: { stars: 400,  label: 'ТОП-размещение вакансии на 30 дней', desc: 'Золотая рамка + закреп' },
+  top_72h:         { stars: 250,  label: 'Закреп в ТОП на 72 часа',          desc: 'Выделение + приоритет' },
+  pro_30d:         { stars: 450,  label: 'PRO-статус на 30 дней',            desc: 'Безлимитные отклики' },
+};
 const BOT_API   = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 const { createClient } = supabase;
@@ -853,6 +917,8 @@ let selCur       = '₽';
 let agreeOk      = false;
 let isPosting    = false;
 let isPinned     = false;   // 🚀 ТОП-размещение
+let vacLimitSelected  = null;  // выбранный тариф в vacancy modal
+let pendingVacPayload = null;  // payload вакансии ожидающей оплаты
 let isDark       = true;
 // Modal state
 let modalJobId         = null;
@@ -929,11 +995,13 @@ async function initAuth() {
   const tid   = String(tgUser.id);
   const uname = (tgUser.username || '').replace(/^@/, '').toLowerCase();
   const isAdmin = uname === 'hipnohop';
-  let role = isAdmin ? 'admin' : 'freelancer';
+  let role   = isAdmin ? 'admin' : 'freelancer';
+  let dbUser = null;
 
   try {
     const { data, error } = await db.from('users').select('*').eq('telegram_id', tid).maybeSingle();
     if (!error && data) {
+      dbUser = data;
       role = isAdmin ? 'admin' : (data.role || 'freelancer');
     } else {
       await db.from('users').insert([{
@@ -946,12 +1014,15 @@ async function initAuth() {
     }
   } catch(e) { console.warn('Auth error:', e); }
 
+  // Загружаем is_pro из данных БД (если есть)
+  const dbIsPro = (dbUser?.is_pro === true) || false;
   CUR_USER = {
     telegram_id: tid,
     first_name: tgUser.first_name || 'Пользователь',
     username: tgUser.username || '',
     photo_url: tgUser.photo_url || null,
-    role
+    role,
+    is_pro: isAdmin ? false : dbIsPro,
   };
 
   renderProfile();
@@ -1042,7 +1113,7 @@ function renderJobs(filter = 'all') {
       <div class="card-top">
         <div style="flex:1;min-width:0;">
           <div class="card-meta">
-            ${j.is_pinned ? '<span class="badge badge-top">⚡ ТОП</span>' : ''}
+            ${j.is_pinned ? '<span class="badge badge-top"><span class="badge-top-icon">⚡</span>ТОП</span>' : ''}
             <span class="badge">${cat}</span>
             <span class="badge badge-remote">Удалённо</span>
           </div>
@@ -1113,16 +1184,9 @@ function closeProModal() {
   document.getElementById('proLimitModal').classList.remove('open');
 }
 
+// activatePro теперь через initPayment (Telegram Stars)
 function activatePro() {
-  closeProModal();
-  haptic('medium');
-  // Открываем бот для оплаты
-  const botUrl = 'https://t.me/AKUJobsHub_bot?start=pro';
-  if (TG) {
-    TG.openTelegramLink(botUrl);
-  } else {
-    window.open(botUrl, '_blank');
-  }
+  initPayment('pro_30d');
 }
 
 // Открыть внешнюю ссылку через Telegram WebApp API
@@ -1150,7 +1214,8 @@ async function submitApply() {
 
   // ── Проверка лимита бесплатных откликов ──
   const isAdminUser = CUR_USER?.role === 'admin';
-  if (!isAdminUser && freeResponsesUsed >= FREE_APPLY_LIMIT) {
+  const isProUser    = CUR_USER?.is_pro === true;
+  if (!isAdminUser && !isProUser && freeResponsesUsed >= FREE_APPLY_LIMIT) {
     closeModal();
     openProModal();
     return;
@@ -1260,6 +1325,145 @@ function setCur(btn) {
   haptic('light');
 }
 
+// ════════════════════════════════════════
+//  PAYMENT ENGINE — Telegram Stars
+// ════════════════════════════════════════
+
+// Универсальная функция инициализации оплаты
+async function initPayment(tariffKey, meta = {}) {
+  const tariff = TARIFFS[tariffKey];
+  if (!tariff) { showToast('❌ Неизвестный тариф', true); return; }
+
+  haptic('medium');
+
+  // Закрываем все открытые модалы
+  closeVacModal();
+  closeProModal();
+
+  if (!TG) {
+    showToast('💡 Оплата доступна только внутри Telegram', true);
+    return;
+  }
+
+  showToast('⏳ Создаём счёт...');
+
+  try {
+    // Запрашиваем инвойс у бэкенда
+    const res = await fetch(`${BACKEND_URL}/api/create-invoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tariff_key:   tariffKey,
+        stars:        tariff.stars,
+        label:        tariff.label,
+        user_id:      CUR_USER?.telegram_id,
+        vacancy_id:   meta.vacancy_id || null,
+        payload_data: meta,
+      })
+    });
+
+    if (!res.ok) throw new Error('Backend error ' + res.status);
+    const { invoice_link } = await res.json();
+
+    // Открываем инвойс через Telegram WebApp
+    TG.openInvoice(invoice_link, (status) => {
+      if (status === 'paid') {
+        haptic('success');
+        showToast('✅ Оплата прошла! Применяем изменения...');
+        // Обновляем UI после оплаты
+        setTimeout(() => {
+          if (tariffKey === 'pro_30d') {
+            CUR_USER.is_pro = true;
+            freeResponsesUsed = 0;
+            try { localStorage.setItem('free_responses_used', '0'); } catch(e) {}
+            showToast('🎉 PRO-статус активирован!');
+          } else if (tariffKey === 'top_72h' && meta.vacancy_id) {
+            // Вакансия уже создана, бэкенд обновил is_pinned
+            showToast('⚡ Вакансия закреплена в ТОП!');
+            loadJobs();
+          } else if (tariffKey.startsWith('vacancy_')) {
+            // Публикуем отложенную вакансию
+            if (pendingVacPayload) {
+              publishVacancy(pendingVacPayload, tariffKey.includes('top'));
+            }
+          }
+        }, 1000);
+      } else if (status === 'cancelled') {
+        showToast('Оплата отменена');
+        haptic('light');
+      } else if (status === 'failed') {
+        showToast('❌ Ошибка оплаты. Попробуйте снова.', true);
+        haptic('error');
+      }
+    });
+
+  } catch(e) {
+    console.error('Payment error:', e);
+    showToast('❌ Ошибка соединения с сервером', true);
+    haptic('error');
+  }
+}
+
+// ── Vacancy limit modal ───────────────────────────────────
+function openVacModal(payload) {
+  pendingVacPayload = payload;
+  vacLimitSelected = null;
+  document.getElementById('vacPayBtn').disabled = true;
+  document.getElementById('vacLimitModal').classList.add('open');
+  haptic('light');
+}
+function highlightOption(el) {
+  document.querySelectorAll('.pay-option').forEach(o => {
+    o.style.borderColor = '';
+    o.style.boxShadow  = '';
+  });
+  el.style.borderColor = 'rgba(212,175,55,.5)';
+  el.style.boxShadow   = '0 0 10px rgba(212,175,55,.1)';
+}
+function closeVacModal() {
+  document.getElementById('vacLimitModal').classList.remove('open');
+}
+function selectVacOption(tariffKey) {
+  vacLimitSelected = tariffKey;
+  document.getElementById('vacPayBtn').disabled = false;
+  document.querySelectorAll('.pay-option').forEach(el => {
+    el.style.borderColor = '';
+    el.style.boxShadow = '';
+  });
+}
+function proceedVacPayment() {
+  if (!vacLimitSelected || !pendingVacPayload) return;
+  initPayment(vacLimitSelected, { pending_payload: pendingVacPayload });
+}
+
+// ── publishVacancy (после оплаты или напрямую) ────────────
+async function publishVacancy(payload, withPin = false) {
+  if (withPin) payload.is_pinned = true;
+  try {
+    const { data, error } = await db.from('jobs').insert([payload]).select().single();
+    if (error) throw error;
+    haptic('success');
+    showToast('🎉 Вакансия опубликована!');
+    pendingVacPayload = null;
+    isPinned = false;
+    document.getElementById('pinCheck').classList.remove('on');
+    agreeOk = false;
+    document.getElementById('agreeCheck').classList.remove('checked');
+    ['fTitle','fBudget','fDesc'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fCategory').value = '';
+    if (CUR_USER?.username) document.getElementById('fContact').value = '@' + CUR_USER.username.replace(/^@/,'');
+    checkForm();
+    // Если нужен TOP после публикации — инициируем оплату TOP
+    if (isPinned && data?.id) {
+      setTimeout(() => initPayment('top_72h', { vacancy_id: data.id }), 500);
+    }
+    switchTab('feed', document.querySelector('[data-tab="feed"]'));
+  } catch(e) {
+    showToast('❌ Ошибка публикации', true);
+    haptic('error');
+  }
+}
+
 function togglePin() {
   isPinned = !isPinned;
   document.getElementById('pinCheck').classList.toggle('on', isPinned);
@@ -1287,6 +1491,35 @@ function checkForm() {
 async function handlePost() {
   if (!isFormFilled() || !agreeOk) { showToast('⚠️ Заполни все поля и прими условия', true); haptic('error'); return; }
   if (isPosting) return;
+
+  // ── Проверяем лимит активных вакансий (2 бесплатных) ──
+  const FREE_VAC_LIMIT = 2;
+  const isAdminPost = CUR_USER?.role === 'admin';
+  if (!isAdminPost) {
+    try {
+      const { count } = await db.from('jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('author_telegram_id', CUR_USER?.telegram_id)
+        .eq('status', 'active');
+      if ((count || 0) >= FREE_VAC_LIMIT) {
+        // Сохраняем payload и показываем окно оплаты
+        const savedPayload = {
+          title:              document.getElementById('fTitle').value.trim(),
+          category:           document.getElementById('fCategory').value,
+          budget:             document.getElementById('fBudget').value.trim() || null,
+          currency:           selCur,
+          description:        document.getElementById('fDesc').value.trim() || null,
+          contacts:           document.getElementById('fContact').value.trim(),
+          status:             'active',
+          is_pinned:          isPinned,
+          author_telegram_id: CUR_USER?.telegram_id || null,
+        };
+        openVacModal(savedPayload);
+        return;
+      }
+    } catch(e) { console.warn('Vacancy count check failed:', e); }
+  }
+
   isPosting = true;
   const btn = document.getElementById('submitBtn');
   btn.classList.add('loading'); btn.textContent = 'Публикуем...';
@@ -1305,7 +1538,10 @@ async function handlePost() {
   };
 
   try {
-    const { error } = await db.from('jobs').insert([payload]);
+    // Публикуем без is_pinned — TOP оплачивается отдельно
+    const wasPin = isPinned;
+    const pubPayload = { ...payload, is_pinned: false };
+    const { data: newJob, error } = await db.from('jobs').insert([pubPayload]).select().single();
     if (error) throw error;
     haptic('success');
     showToast('🎉 Вакансия опубликована!');
@@ -1318,6 +1554,10 @@ async function handlePost() {
     document.getElementById('pinCheck').classList.remove('on');
     checkForm();
     switchTab('feed', document.querySelector('[data-tab="feed"]'));
+    // Если выбран ТОП — инициируем оплату после публикации
+    if (wasPin && newJob?.id) {
+      setTimeout(() => initPayment('top_72h', { vacancy_id: newJob.id }), 800);
+    }
   } catch(e) {
     showToast('❌ Ошибка публикации. Попробуй снова.', true);
     haptic('error');
@@ -1558,8 +1798,10 @@ function enterApp() {
   }
   const ob = document.getElementById('onboarding-screen');
   ob.style.opacity = '0';
-  ob.style.transition = 'opacity .3s ease';
-  setTimeout(() => { ob.style.display = 'none'; }, 320);
+  ob.style.transition = 'opacity .28s ease';
+  setTimeout(() => {
+    if (ob && ob.parentNode) ob.parentNode.removeChild(ob);
+  }, 290);
   haptic('success');
 }
 
@@ -1576,7 +1818,7 @@ function checkOnboarding() {
 //  INIT
 // ════════════════════════════════════════
 (async () => {
-  checkOnboarding(); // скрыть onboarding если уже принят
+  checkOnboarding(); // удалить onboarding из DOM если принят
   // Загружаем счётчик откликов из localStorage
   try {
     const saved = localStorage.getItem('free_responses_used');
