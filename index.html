@@ -7,6 +7,20 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <title>AKU Jobs Hub</title>
+<script>
+// Мгновенная проверка соглашения ДО рендера — предотвращает мелькание
+(function(){
+  try {
+    if (localStorage.getItem('rules_accepted') === 'true') {
+      // Скрываем onboarding через inline-стиль на элемент до его рендера
+      document.addEventListener('DOMContentLoaded', function() {
+        var ob = document.getElementById('onboarding-screen');
+        if (ob) ob.style.display = 'none';
+      });
+    }
+  } catch(e) {}
+})();
+</script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -117,6 +131,26 @@ a{text-decoration:none;color:inherit;}
 [data-theme="light"] .badge{background:rgba(0,0,0,.04);}
 .badge-remote{border-color:rgba(34,197,94,.25);color:var(--green);background:rgba(34,197,94,.06);}
 .badge-arch{border-color:rgba(255,165,0,.25);color:#f59e0b;background:rgba(255,165,0,.06);}
+.badge-top{border-color:rgba(212,175,55,.5);color:#D4AF37;background:rgba(212,175,55,.1);font-weight:800;}
+/* Pinned / TOP card */
+.card.is-pinned{border-color:rgba(212,175,55,.35);box-shadow:0 0 0 1px rgba(212,175,55,.2),inset 0 1px 0 rgba(212,175,55,.08);}
+.card.is-pinned:hover{border-color:rgba(212,175,55,.6);box-shadow:0 0 0 1px rgba(212,175,55,.35),0 8px 24px rgba(212,175,55,.12);}
+/* Pin toggle in form */
+.pin-toggle{display:flex;align-items:center;gap:12px;padding:13px 14px;
+  background:linear-gradient(135deg,rgba(212,175,55,.07),rgba(212,175,55,.03));
+  border:1px solid rgba(212,175,55,.25);border-radius:11px;margin-bottom:14px;cursor:pointer;
+  transition:border-color .2s,background .2s;}
+.pin-toggle:hover{border-color:rgba(212,175,55,.45);}
+.pin-toggle-check{width:22px;height:22px;border-radius:7px;border:1.5px solid rgba(212,175,55,.4);
+  background:rgba(212,175,55,.06);flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;}
+.pin-toggle-check.on{background:var(--accent);border-color:var(--accent);}
+.pin-toggle-check svg{width:13px;height:13px;stroke:#0D0D0D;stroke-width:2.5;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s;}
+.pin-toggle-check.on svg{opacity:1;}
+.pin-toggle-label{flex:1;}
+.pin-toggle-title{font-size:13px;font-weight:700;color:var(--accent);}
+.pin-toggle-sub{font-size:11px;color:var(--text3);margin-top:1px;}
 .badge-new{border-color:rgba(212,175,55,.35);color:var(--accent);background:rgba(212,175,55,.07);}
 .card-title{font-size:13.5px;font-weight:700;line-height:1.35;color:var(--text);}
 .card-desc{font-size:12px;color:var(--text2);line-height:1.5;margin:6px 0 10px;
@@ -319,6 +353,34 @@ select.form-input option{background:var(--card);}
 .app-time{font-size:10px;color:var(--text3);margin-top:6px;}
 
 /* ── MODAL ── */
+/* PRO limit modal */
+#proLimitModal .modal-sheet{
+  background:linear-gradient(160deg,#1a1510 0%,#1A1A1A 60%);
+}
+.pro-limit-ico{font-size:44px;text-align:center;margin-bottom:12px;}
+.pro-limit-counter{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-bottom:16px;
+}
+.pro-counter-dot{width:10px;height:10px;border-radius:50%;background:rgba(212,175,55,.25);}
+.pro-counter-dot.used{background:var(--accent);box-shadow:0 0 6px rgba(212,175,55,.5);}
+.btn-pro-activate{
+  width:100%;padding:15px;border-radius:13px;font-size:13.5px;font-weight:800;
+  letter-spacing:.05em;
+  background:linear-gradient(135deg,#c9a227,#D4AF37,#e8c84a);
+  color:#0D0D0D;border:none;margin-top:4px;
+  box-shadow:0 4px 18px rgba(212,175,55,.3);
+  transition:filter .2s,transform .2s;cursor:pointer;
+}
+.btn-pro-activate:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.btn-pro-activate:active{transform:scale(.99);}
+.btn-pro-later{
+  width:100%;padding:11px;border-radius:10px;font-size:12px;font-weight:600;
+  color:var(--text3);background:transparent;border:1px solid var(--border);
+  margin-top:8px;transition:border-color .2s,color .2s;cursor:pointer;
+}
+.btn-pro-later:hover{border-color:var(--border-hi);color:var(--text2);}
+
 .modal-overlay{
   position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
   z-index:200;display:flex;align-items:flex-end;justify-content:center;
@@ -575,6 +637,17 @@ select.form-input option{background:var(--card);}
         <label class="form-label">Контакт (Telegram)</label>
         <input class="form-input" id="fContact" type="text" placeholder="@username" oninput="checkForm()"/>
       </div>
+      <!-- 🚀 ТОП-размещение -->
+      <div class="pin-toggle" id="pinToggle" onclick="togglePin()">
+        <div class="pin-toggle-check" id="pinCheck">
+          <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+        </div>
+        <div class="pin-toggle-label">
+          <div class="pin-toggle-title">⚡ Закрепить вакансию в ТОП</div>
+          <div class="pin-toggle-sub">Стоимость: 5 USDT · Показывается первой в ленте</div>
+        </div>
+      </div>
+
       <div class="agree-block" onclick="toggleAgree()">
         <div class="agree-check" id="agreeCheck">
           <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
@@ -654,7 +727,7 @@ select.form-input option{background:var(--card);}
         <span class="hub-chip">📱 Reels / TikTok</span><span class="hub-chip">🎥 Продающее видео</span>
         <span class="hub-chip">✂️ Монтаж</span><span class="hub-chip">🎯 Конверсия</span>
       </div>
-      <a class="btn-hub" href="https://t.me/AKUJobsHub" target="_blank" rel="noopener" onclick="haptic('medium')">Узнать подробнее →</a>
+      <a class="btn-hub" href="https://akumedia.github.io/AKU-Media/" target="_blank" rel="noopener" onclick="openExternalLink(event,'https://akumedia.github.io/AKU-Media/')">Узнать подробнее →</a>
     </div>
     <!-- AKU Automation -->
     <div class="hub-banner">
@@ -674,7 +747,7 @@ select.form-input option{background:var(--card);}
         <span class="hub-chip">🤖 AI-ассистенты</span><span class="hub-chip">📨 Telegram-боты</span>
         <span class="hub-chip">⚙️ Автоматизация</span><span class="hub-chip">🔗 Интеграции</span>
       </div>
-      <a class="btn-hub" href="https://t.me/AKUJobsHub" target="_blank" rel="noopener" onclick="haptic('medium')">Узнать подробнее →</a>
+      <a class="btn-hub" href="https://akuautomation.github.io/AKUAutomation/" target="_blank" rel="noopener" onclick="openExternalLink(event,'https://akuautomation.github.io/AKUAutomation/')">Узнать подробнее →</a>
     </div>
   </div>
 
@@ -730,6 +803,31 @@ select.form-input option{background:var(--card);}
   </div>
 </div>
 
+<!-- ════ PRO LIMIT MODAL ════ -->
+<div class="modal-overlay" id="proLimitModal">
+  <div class="modal-sheet" style="position:relative;">
+    <div class="modal-handle"></div>
+    <div class="pro-limit-ico">🚀</div>
+    <div class="modal-title" style="text-align:center;">Лимит бесплатных откликов</div>
+    <div class="modal-sub" style="text-align:center;margin-top:6px;">
+      Вы использовали все <strong id="proLimitCount">3</strong> бесплатных отклика.<br/>
+      Активируйте статус PRO, чтобы откликаться без ограничений и получить доступ к эксклюзивным заказам.
+    </div>
+    <div class="pro-limit-counter" id="proLimitDots"></div>
+    <div style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;">PRO включает:</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7;">
+        ✅ Неограниченные отклики<br/>
+        ✅ Доступ к эксклюзивным вакансиям<br/>
+        ✅ Приоритетное отображение резюме<br/>
+        ✅ Значок PRO в профиле
+      </div>
+    </div>
+    <button class="btn-pro-activate" onclick="activatePro()">💎 АКТИВИРОВАТЬ PRO</button>
+    <button class="btn-pro-later" onclick="closeProModal()">Позже</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -754,12 +852,17 @@ let postType     = 'job';
 let selCur       = '₽';
 let agreeOk      = false;
 let isPosting    = false;
+let isPinned     = false;   // 🚀 ТОП-размещение
 let isDark       = true;
 // Modal state
 let modalJobId         = null;
 let modalJobTitle_val  = '';
 let modalAuthorTid     = null;
 let isSendingApply     = false;
+
+// ── Лимит откликов (монетизация) ──────────────────────────
+const FREE_APPLY_LIMIT = 3;
+let freeResponsesUsed  = 0;  // загрузим из localStorage при старте
 
 const CAT_KEY = {
   '🎨 Дизайн':'design','💻 Разработка':'dev','📣 Маркетинг':'marketing',
@@ -919,8 +1022,9 @@ function renderSkeleton(n=4) {
 function renderJobs(filter = 'all') {
   activeFilter = filter;
   const el = document.getElementById('jobsList');
-  const list = filter === 'all' ? allJobs
-    : allJobs.filter(j => CAT_KEY[j.category] === filter);
+  // Сортировка: pinned (ТОП) всегда первые
+  const base = filter === 'all' ? allJobs : allJobs.filter(j => CAT_KEY[j.category] === filter);
+  const list = [...base].sort((a,b) => (b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0));
 
   if (!list.length) {
     el.innerHTML = '<div class="empty-box"><div class="empty-ico">📭</div><div class="empty-ttl">Пока нет вакансий</div><div class="empty-sub">Станьте первым — разместите задачу во вкладке «Разместить»</div></div>';
@@ -934,10 +1038,11 @@ function renderJobs(filter = 'all') {
     const cat = j.category || '📋 Прочее';
     const bud = formatPrice(j);
     return `
-    <div class="card" style="animation-delay:${i*35}ms;">
+    <div class="card${j.is_pinned ? ' is-pinned' : ''}" style="animation-delay:${i*35}ms;">
       <div class="card-top">
         <div style="flex:1;min-width:0;">
           <div class="card-meta">
+            ${j.is_pinned ? '<span class="badge badge-top">⚡ ТОП</span>' : ''}
             <span class="badge">${cat}</span>
             <span class="badge badge-remote">Удалённо</span>
           </div>
@@ -988,14 +1093,68 @@ function closeModal() {
   document.getElementById('applyModal').classList.remove('open');
 }
 
-// Close modal on overlay tap
+function openProModal() {
+  // Обновляем счётчик
+  const limit = FREE_APPLY_LIMIT;
+  document.getElementById('proLimitCount').textContent = limit;
+  // Рисуем точки прогресса
+  const dots = document.getElementById('proLimitDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < limit; i++) {
+    const d = document.createElement('div');
+    d.className = 'pro-counter-dot' + (i < freeResponsesUsed ? ' used' : '');
+    dots.appendChild(d);
+  }
+  document.getElementById('proLimitModal').classList.add('open');
+  haptic('error');
+}
+
+function closeProModal() {
+  document.getElementById('proLimitModal').classList.remove('open');
+}
+
+function activatePro() {
+  closeProModal();
+  haptic('medium');
+  // Открываем бот для оплаты
+  const botUrl = 'https://t.me/AKUJobsHub_bot?start=pro';
+  if (TG) {
+    TG.openTelegramLink(botUrl);
+  } else {
+    window.open(botUrl, '_blank');
+  }
+}
+
+// Открыть внешнюю ссылку через Telegram WebApp API
+function openExternalLink(e, url) {
+  e.preventDefault();
+  haptic('light');
+  if (TG) {
+    TG.openLink(url);
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+// Close modals on overlay tap
 document.getElementById('applyModal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
+});
+document.getElementById('proLimitModal').addEventListener('click', function(e) {
+  if (e.target === this) closeProModal();
 });
 
 async function submitApply() {
   const letter = document.getElementById('coverLetter').value.trim();
   if (letter.length < 10 || isSendingApply) return;
+
+  // ── Проверка лимита бесплатных откликов ──
+  const isAdminUser = CUR_USER?.role === 'admin';
+  if (!isAdminUser && freeResponsesUsed >= FREE_APPLY_LIMIT) {
+    closeModal();
+    openProModal();
+    return;
+  }
 
   isSendingApply = true;
   const btn = document.getElementById('sendApplyBtn');
@@ -1024,6 +1183,10 @@ async function submitApply() {
     }
 
     showToast('✅ Отклик отправлен!');
+
+    // Инкрементируем использованные отклики
+    freeResponsesUsed++;
+    try { localStorage.setItem('free_responses_used', String(freeResponsesUsed)); } catch(e) {}
 
     // СЦЕНАРИЙ А — уведомление автору вакансии
     if (modalAuthorTid) {
@@ -1097,6 +1260,12 @@ function setCur(btn) {
   haptic('light');
 }
 
+function togglePin() {
+  isPinned = !isPinned;
+  document.getElementById('pinCheck').classList.toggle('on', isPinned);
+  haptic('light');
+}
+
 function toggleAgree() {
   agreeOk = !agreeOk;
   document.getElementById('agreeCheck').classList.toggle('checked', agreeOk);
@@ -1131,6 +1300,7 @@ async function handlePost() {
     description:         document.getElementById('fDesc').value.trim() || null,
     contacts:            document.getElementById('fContact').value.trim(),
     status:              'active',
+    is_pinned:           isPinned,
     author_telegram_id:  CUR_USER?.telegram_id || null,
   };
 
@@ -1144,6 +1314,8 @@ async function handlePost() {
     if (CUR_USER?.username) document.getElementById('fContact').value = '@' + CUR_USER.username.replace(/^@/,'');
     agreeOk = false;
     document.getElementById('agreeCheck').classList.remove('checked');
+    isPinned = false;
+    document.getElementById('pinCheck').classList.remove('on');
     checkForm();
     switchTab('feed', document.querySelector('[data-tab="feed"]'));
   } catch(e) {
@@ -1374,11 +1546,20 @@ function toggleObAgree() {
 
 function enterApp() {
   if (!obAgreed) return;
-  try { localStorage.setItem('rules_accepted', 'true'); } catch(e) {}
+  // Гарантированная запись в localStorage
+  try {
+    localStorage.setItem('rules_accepted', 'true');
+    // Двойная проверка записи
+    if (localStorage.getItem('rules_accepted') !== 'true') {
+      localStorage.setItem('rules_accepted', 'true');
+    }
+  } catch(e) {
+    console.warn('localStorage unavailable:', e);
+  }
   const ob = document.getElementById('onboarding-screen');
   ob.style.opacity = '0';
-  ob.style.transition = 'opacity .35s ease';
-  setTimeout(() => { ob.style.display = 'none'; }, 360);
+  ob.style.transition = 'opacity .3s ease';
+  setTimeout(() => { ob.style.display = 'none'; }, 320);
   haptic('success');
 }
 
@@ -1396,6 +1577,11 @@ function checkOnboarding() {
 // ════════════════════════════════════════
 (async () => {
   checkOnboarding(); // скрыть onboarding если уже принят
+  // Загружаем счётчик откликов из localStorage
+  try {
+    const saved = localStorage.getItem('free_responses_used');
+    if (saved) freeResponsesUsed = Math.min(parseInt(saved, 10) || 0, FREE_APPLY_LIMIT);
+  } catch(e) {}
   await initAuth();
   loadJobs();
   checkForm();
