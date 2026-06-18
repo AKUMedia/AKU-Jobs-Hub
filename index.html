@@ -165,6 +165,22 @@ a{text-decoration:none;color:inherit;}
 .card-time{font-size:10px;color:var(--text3);margin-top:1px;}
 
 /* Apply button with animation */
+/* Premium-вакансии */
+.card.card-premium{border-color:rgba(244,74,34,.45);box-shadow:0 0 0 1px rgba(244,74,34,.15),0 4px 18px rgba(244,74,34,.1);}
+.card.card-premium:hover{border-color:rgba(244,74,34,.7);box-shadow:0 0 0 1px rgba(244,74,34,.3),0 8px 26px rgba(244,74,34,.16);}
+.badge-prem{border-color:rgba(244,74,34,.5);color:#f44a22;background:rgba(244,74,34,.1);font-weight:800;}
+/* АДМИН-ПАНЕЛЬ */
+.adm-card{background:rgba(255,255,255,.03);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px;margin-bottom:13px;}
+.adm-card-ttl{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;}
+.adm-period{display:flex;gap:7px;}
+.adm-per-btn{flex:1;padding:9px;border-radius:9px;background:var(--card2);border:1px solid var(--border);color:var(--text2);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .2s;}
+.adm-per-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.adm-mod-item{background:var(--card2);border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:9px;}
+.adm-mod-ttl{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.adm-mod-meta{font-size:10.5px;color:var(--text3);margin-bottom:9px;line-height:1.5;}
+.adm-mod-row{display:flex;gap:7px;}
+.adm-btn-ok{flex:1;padding:8px;border-radius:8px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#22c55e;font-size:11.5px;font-weight:700;cursor:pointer;}
+.adm-btn-no{flex:1;padding:8px;border-radius:8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#ef4444;font-size:11.5px;font-weight:700;cursor:pointer;}
 .btn-apply{padding:8px 15px;border-radius:9px;font-size:11px;font-weight:700;letter-spacing:.04em;
   background:var(--card2);border:1px solid var(--border-hi);color:var(--text);
   transition:border-color .18s,box-shadow .18s;white-space:nowrap;position:relative;overflow:hidden;}
@@ -743,6 +759,30 @@ select.form-input option{background:var(--card);}
     </div>
   </div>
 
+  <!-- ── АДМИН-ПАНЕЛЬ ── -->
+  <div id="pg-admin" class="page">
+    <div class="page-title">Админ-панель</div>
+    <div class="page-sub">Модерация и управление Premium</div>
+
+    <!-- Секция выдачи Premium -->
+    <div class="adm-card">
+      <div class="adm-card-ttl">🎁 Выдать Premium</div>
+      <input class="form-input" id="admPremId" type="text" placeholder="Telegram ID или UUID пользователя" style="margin-bottom:10px;"/>
+      <div class="adm-period">
+        <button class="adm-per-btn active" data-period="1" onclick="selectPremPeriod(this,1)">1 месяц</button>
+        <button class="adm-per-btn" data-period="3" onclick="selectPremPeriod(this,3)">3 месяца</button>
+        <button class="adm-per-btn" data-period="forever" onclick="selectPremPeriod(this,'forever')">Навсегда</button>
+      </div>
+      <button class="btn-submit" style="margin-top:12px;" onclick="grantPremium()">Выдать Premium</button>
+    </div>
+
+    <!-- Секция модерации -->
+    <div class="adm-card">
+      <div class="adm-card-ttl">🛡 Модерация · <span id="admPendingCount">0</span> на проверке</div>
+      <div id="admModList"><div class="empty-sub" style="padding:10px 0;">Загрузка...</div></div>
+    </div>
+  </div>
+
 </div><!-- /pages -->
 
 <!-- ════ BOTTOM NAV ════ -->
@@ -770,6 +810,12 @@ select.form-input option{background:var(--card);}
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
     </svg>
     <span class="ni-lbl">AKU Hub</span>
+  </button>
+  <button class="nav-btn" id="adminNavBtn" data-tab="admin" onclick="switchTab('admin',this)" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/>
+    </svg>
+    <span class="ni-lbl">Админ</span>
   </button>
 </nav>
 
@@ -871,6 +917,66 @@ const BOT_API   = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 const { createClient } = supabase;
 const db = createClient(SB_URL, SB_KEY);
+
+// ════════════════════════════════════════
+//  PREMIUM / ЛИМИТЫ — хелперы
+// ════════════════════════════════════════
+function isPremiumValid(premiumUntil){
+  if(!premiumUntil) return false;
+  try { return new Date(premiumUntil).getTime() > Date.now(); } catch(e){ return false; }
+}
+function since24h(){ return new Date(Date.now() - 24*60*60*1000).toISOString(); }
+
+// Дневные лимиты
+const LIMIT_POST_FREE = 3;
+const LIMIT_POST_PREM = 10;
+const LIMIT_APPLY_FREE = 25;
+// Premium отклики — безлимит
+
+// Подсчёт публикаций пользователя за последние 24ч
+async function countPostsLast24h(tid){
+  try {
+    const { count } = await db.from('jobs')
+      .select('id', { count:'exact', head:true })
+      .eq('author_telegram_id', tid)
+      .gte('created_at', since24h());
+    return count || 0;
+  } catch(e){ console.warn('countPosts', e); return 0; }
+}
+// Подсчёт откликов пользователя за последние 24ч
+async function countAppliesLast24h(tid){
+  try {
+    const { count } = await db.from('applications')
+      .select('id', { count:'exact', head:true })
+      .eq('applicant_telegram_id', tid)
+      .gte('created_at', since24h());
+    return count || 0;
+  } catch(e){ console.warn('countApplies', e); return 0; }
+}
+
+// ════════════════════════════════════════
+//  АНТИ-СПАМ ВАЛИДАТОР (для всех пользователей)
+// ════════════════════════════════════════
+const BANNED_WORDS = [
+  'казино','casino','ставк','букмекер','crypto pump','пирамид','хайп','hyip',
+  'нюдс','порно','porn','intim','эскорт','escort','наркот','мефедрон','закладк',
+  'обнал','скам','scam','развод на деньги','выигрыш','лотере','инвестиц гаранти',
+  'заработок без вложен','лёгкие деньги','легкие деньги','бинарн опцион'
+];
+
+function validateAntiSpam(text){
+  const t = (text || '').toLowerCase();
+  // 1) Ссылки и юзернеймы запрещены всем
+  if (/https?:\/\//i.test(t) || /t\.me/i.test(t) || /@\w/i.test(t) || /www\./i.test(t)) {
+    return { ok:false, msg:'Публикация ссылок и контактных юзернеймов в тексте запрещена для защиты от спама!' };
+  }
+  // 2) Запрещённые слова (цензура / скам)
+  for (const w of BANNED_WORDS){
+    if (t.includes(w)) return { ok:false, msg:'Текст содержит запрещённые слова и не может быть опубликован.' };
+  }
+  return { ok:true };
+}
+
 
 // ════════════════════════════════════════
 //  STATE
@@ -980,17 +1086,28 @@ async function initAuth() {
     }
   } catch(e) { console.warn('Auth error:', e); }
 
-  // Загружаем is_pro из данных БД (если есть)
-  const dbIsPro = (dbUser?.is_pro === true) || false;
+  // Premium по дате premium_until (> сейчас) + админ-флаг
+  const premiumUntil = dbUser?.premium_until || null;
+  const isPremiumActive = isPremiumValid(premiumUntil);
+  const dbIsAdmin = (dbUser?.is_admin === true) || isAdmin;
   CUR_USER = {
+    id:          dbUser?.id || null,            // UUID из public.users
     telegram_id: tid,
-    first_name: tgUser.first_name || 'Пользователь',
-    username: tgUser.username || '',
-    photo_url: tgUser.photo_url || null,
+    first_name:  tgUser.first_name || 'Пользователь',
+    username:    tgUser.username || '',
+    photo_url:   tgUser.photo_url || null,
     role,
-    is_pro: isAdmin ? false : dbIsPro,
+    premium_until: premiumUntil,
+    is_pro:      isPremiumActive,               // совместимость со старым кодом
+    is_premium:  isPremiumActive,
+    is_admin:    dbIsAdmin,
   };
 
+  // Показать админ-вкладку
+  if (CUR_USER.is_admin) {
+    const ab = document.getElementById('adminNavBtn');
+    if (ab) ab.style.display = '';
+  }
   renderProfile();
   // Auto-fill contact
   if (CUR_USER.username) {
@@ -1016,6 +1133,7 @@ function switchTab(name, btn) {
   haptic('light');
   if (name === 'feed')    loadJobs();
   if (name === 'profile') { renderProfile(); loadMyJobs(); loadMyApps(); }
+  if (name === 'admin')   { loadModeration(); }
   updateMainButton();
 }
 
@@ -1065,13 +1183,14 @@ function renderJobs(filter = 'all') {
   el.innerHTML = list.map((j, i) => {
     const cat = j.category || '📋 Прочее';
     const bud = formatPrice(j);
+    const isPremJob = j.is_premium_job === true;
     return `
-    <div class="card" style="animation-delay:${i*35}ms;">
+    <div class="card${isPremJob ? ' card-premium' : ''}" style="animation-delay:${i*35}ms;">
       <div class="card-top">
         <div style="flex:1;min-width:0;">
           <div class="card-meta">
             <span class="badge">${cat}</span>
-            <span class="badge badge-remote">Удалённо</span>
+            ${isPremJob ? '<span class="badge badge-prem">⭐ Premium</span>' : '<span class="badge badge-remote">Удалённо</span>'}
           </div>
           <div class="card-title">${esc(j.title)}</div>
         </div>
@@ -1084,7 +1203,7 @@ function renderJobs(filter = 'all') {
           <div class="card-time">${timeAgo(j.created_at)}</div>
         </div>
         ${isFreelancer && !isAdmin
-          ? `<button class="btn-apply" onclick="openApplyModal('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}')">ОТКЛИКНУТЬСЯ</button>`
+          ? `<button class="btn-apply" onclick="openApplyModal('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}',${isPremJob})">ОТКЛИКНУТЬСЯ</button>`
           : isAdmin
             ? `<button class="btn-apply" onclick="approveJob('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}')">✅ Одобрить</button>`
             : `<span style="font-size:10px;color:var(--text3);">Ваша платформа</span>`
@@ -1104,7 +1223,16 @@ function filterJobs(btn, f) {
 // ════════════════════════════════════════
 //  APPLY MODAL
 // ════════════════════════════════════════
-function openApplyModal(jobId, jobTitle, authorTid) {
+let modalJobIsPrem = false;
+function openApplyModal(jobId, jobTitle, authorTid, isPremJob) {
+  // 3Б) Free не может откликаться на Premium-вакансии
+  const isPrem = !!CUR_USER?.is_premium || CUR_USER?.is_admin === true;
+  if (isPremJob && !isPrem) {
+    showToast('Отклики на Premium-вакансии доступны только владельцам Premium-аккаунта!', true);
+    haptic('error');
+    return;
+  }
+  modalJobIsPrem    = isPremJob === true;
   modalJobId        = jobId;
   modalJobTitle_val = jobTitle;
   modalAuthorTid    = authorTid || null;
@@ -1168,13 +1296,18 @@ async function submitApply() {
   const letter = document.getElementById('coverLetter').value.trim();
   if (letter.length < 10 || isSendingApply) return;
 
-  // ── Проверка лимита бесплатных откликов ──
-  const isAdminUser = CUR_USER?.role === 'admin';
-  const isProUser    = CUR_USER?.is_pro === true;
-  if (!isAdminUser && !isProUser && freeResponsesUsed >= FREE_APPLY_LIMIT) {
-    closeModal();
-    openProModal();
-    return;
+  // ── 3Б) ЛИМИТ ОТКЛИКОВ за 24ч: free 25/день, premium безлимит ──
+  const isAdminUser = CUR_USER?.is_admin === true;
+  const isPremUser  = !!CUR_USER?.is_premium;
+  if (!isAdminUser && !isPremUser) {
+    const used = await countAppliesLast24h(CUR_USER?.telegram_id);
+    if (used >= LIMIT_APPLY_FREE) {
+      showToast(`Лимит бесплатного аккаунта: ${LIMIT_APPLY_FREE} откликов в сутки. Оформи Premium для безлимита.`, true);
+      haptic('error');
+      closeModal();
+      openProModal();
+      return;
+    }
   }
 
   isSendingApply = true;
@@ -1431,55 +1564,52 @@ async function handlePost() {
   if (!isFormFilled() || !agreeOk) { showToast('⚠️ Заполни все поля и прими условия', true); haptic('error'); return; }
   if (isPosting) return;
 
-  // ── Проверяем лимит активных вакансий (2 бесплатных) ──
-  const FREE_VAC_LIMIT = 2;
-  const isAdminPost = CUR_USER?.role === 'admin';
+  const desc    = document.getElementById('fDesc').value.trim();
+  const contact = document.getElementById('fContact').value.trim();
+  const title   = document.getElementById('fTitle').value.trim();
+
+  // ── 2) ЗАЩИТА ОТ ССЫЛОК И СПАМА (для ВСЕХ) ──
+  const spam = validateAntiSpam([title, desc, contact].join(' \n '));
+  if (!spam.ok) { showToast(spam.msg, true); haptic('error'); return; }
+
+  // ── 3А) ЛИМИТ ПУБЛИКАЦИЙ за 24ч (3 free / 10 premium) ──
+  const isPrem  = !!CUR_USER?.is_premium;
+  const isAdminPost = CUR_USER?.is_admin === true;
   if (!isAdminPost) {
-    try {
-      const { count } = await db.from('jobs')
-        .select('id', { count: 'exact', head: true })
-        .eq('author_telegram_id', CUR_USER?.telegram_id)
-        .eq('status', 'active');
-      if ((count || 0) >= FREE_VAC_LIMIT) {
-        // Сохраняем payload и показываем окно оплаты
-        const savedPayload = {
-          title:              document.getElementById('fTitle').value.trim(),
-          category:           document.getElementById('fCategory').value,
-          budget:             document.getElementById('fBudget').value.trim() || null,
-          currency:           selCur,
-          description:        document.getElementById('fDesc').value.trim() || null,
-          contacts:           document.getElementById('fContact').value.trim(),
-          status:             'active',
-          author_telegram_id: CUR_USER?.telegram_id || null,
-        };
-        openVacModal(savedPayload);
-        return;
-      }
-    } catch(e) { console.warn('Vacancy count check failed:', e); }
+    const posted = await countPostsLast24h(CUR_USER?.telegram_id);
+    const limit  = isPrem ? LIMIT_POST_PREM : LIMIT_POST_FREE;
+    if (posted >= limit) {
+      showToast(isPrem
+        ? `Лимит Premium: ${LIMIT_POST_PREM} вакансий в сутки исчерпан.`
+        : `Лимит бесплатного аккаунта: ${LIMIT_POST_FREE} вакансии в сутки. Оформи Premium для 10/день.`, true);
+      haptic('error');
+      return;
+    }
   }
 
   isPosting = true;
   const btn = document.getElementById('submitBtn');
-  btn.classList.add('loading'); btn.textContent = 'Публикуем...';
+  btn.classList.add('loading'); btn.textContent = 'Отправляем...';
   if (TG) TG.MainButton.showProgress(false);
 
+  // ── 1) Новая вакансия → status 'pending' (на модерацию). Premium → is_premium_job ──
   const payload = {
-    title:               document.getElementById('fTitle').value.trim(),
+    title,
     category:            document.getElementById('fCategory').value,
     budget:              document.getElementById('fBudget').value.trim() || null,
     currency:            selCur,
-    description:         document.getElementById('fDesc').value.trim() || null,
-    contacts:            document.getElementById('fContact').value.trim(),
-    status:              'active',
+    description:         desc || null,
+    contacts:            contact,
+    status:              'pending',
+    is_premium_job:      isPrem === true,
     author_telegram_id:  CUR_USER?.telegram_id || null,
   };
 
   try {
-    const pubPayload = { ...payload };
-    const { data: newJob, error } = await db.from('jobs').insert([pubPayload]).select().single();
+    const { error } = await db.from('jobs').insert([payload]);
     if (error) throw error;
     haptic('success');
-    showToast('🎉 Вакансия опубликована!');
+    showToast('✅ Вакансия отправлена на модерацию. После одобрения появится в ленте.');
     ['fTitle','fBudget','fDesc'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('fCategory').value = '';
     if (CUR_USER?.username) document.getElementById('fContact').value = '@' + CUR_USER.username.replace(/^@/,'');
@@ -1488,6 +1618,7 @@ async function handlePost() {
     checkForm();
     switchTab('feed', document.querySelector('[data-tab="feed"]'));
   } catch(e) {
+    console.error('Publish error:', e);
     showToast('❌ Ошибка публикации. Попробуй снова.', true);
     haptic('error');
   } finally {
@@ -1495,6 +1626,97 @@ async function handlePost() {
     btn.classList.remove('loading'); btn.textContent = 'ОПУБЛИКОВАТЬ';
     if (TG) TG.MainButton.hideProgress();
     updateMainButton();
+  }
+}
+
+
+// ════════════════════════════════════════
+//  АДМИН-ПАНЕЛЬ
+// ════════════════════════════════════════
+let admPremPeriod = 1; // 1 | 3 | 'forever'
+function selectPremPeriod(btn, p){
+  admPremPeriod = p;
+  document.querySelectorAll('.adm-per-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  haptic('light');
+}
+
+// Модерация: список pending
+async function loadModeration(){
+  if (!CUR_USER?.is_admin) return;
+  const box = document.getElementById('admModList');
+  box.innerHTML = '<div class="empty-sub" style="padding:10px 0;">Загрузка...</div>';
+  try {
+    const { data, error } = await db.from('jobs').select('*')
+      .eq('status','pending').order('created_at',{ascending:true});
+    if (error) throw error;
+    const list = data || [];
+    document.getElementById('admPendingCount').textContent = list.length;
+    if (!list.length){ box.innerHTML = '<div class="empty-sub" style="padding:10px 0;">Нет вакансий на модерации</div>'; return; }
+    box.innerHTML = list.map(j => `
+      <div class="adm-mod-item" id="mod-${j.id}">
+        <div class="adm-mod-ttl">${esc(j.title)}${j.is_premium_job?' ⭐':''}</div>
+        <div class="adm-mod-meta">${j.category||''} · ${formatPrice(j)}<br>${esc(j.description||'')}<br>Контакт: ${esc(j.contacts||'—')} · TID: ${j.author_telegram_id||'—'}</div>
+        <div class="adm-mod-row">
+          <button class="adm-btn-ok" onclick="modApprove('${j.id}')">✅ Одобрить</button>
+          <button class="adm-btn-no" onclick="modReject('${j.id}')">🗑 Отклонить</button>
+        </div>
+      </div>`).join('');
+  } catch(e){
+    console.error('loadModeration', e);
+    box.innerHTML = '<div class="empty-sub" style="padding:10px 0;">Ошибка загрузки</div>';
+  }
+}
+async function modApprove(id){
+  try {
+    const { error } = await db.from('jobs').update({ status:'active' }).eq('id', id);
+    if (error) throw error;
+    haptic('success'); showToast('✅ Вакансия одобрена');
+    document.getElementById('mod-'+id)?.remove();
+    loadModeration();
+  } catch(e){ showToast('❌ Ошибка одобрения', true); }
+}
+async function modReject(id){
+  try {
+    const { error } = await db.from('jobs').delete().eq('id', id);
+    if (error) throw error;
+    haptic('warning'); showToast('🗑 Вакансия отклонена');
+    document.getElementById('mod-'+id)?.remove();
+    loadModeration();
+  } catch(e){ showToast('❌ Ошибка удаления', true); }
+}
+
+// Выдача Premium по telegram_id или UUID
+async function grantPremium(){
+  if (!CUR_USER?.is_admin) return;
+  const raw = document.getElementById('admPremId').value.trim();
+  if (!raw){ showToast('⚠️ Укажите ID пользователя', true); return; }
+
+  // вычисляем premium_until
+  let until;
+  if (admPremPeriod === 'forever'){
+    until = '2099-12-31T23:59:59.000Z';
+  } else {
+    const d = new Date(); d.setMonth(d.getMonth() + Number(admPremPeriod));
+    until = d.toISOString();
+  }
+
+  // UUID или telegram_id?
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw);
+  const field = isUuid ? 'id' : 'telegram_id';
+  try {
+    const { data, error } = await db.from('users')
+      .update({ premium_until: until })
+      .eq(field, raw)
+      .select();
+    if (error) throw error;
+    if (!data || !data.length){ showToast('⚠️ Пользователь не найден', true); return; }
+    haptic('success');
+    showToast(`✅ Premium выдан до ${admPremPeriod==='forever'?'∞':new Date(until).toLocaleDateString('ru-RU')}`);
+    document.getElementById('admPremId').value = '';
+  } catch(e){
+    console.error('grantPremium', e);
+    showToast('❌ Ошибка выдачи Premium', true);
   }
 }
 
