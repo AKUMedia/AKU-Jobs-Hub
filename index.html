@@ -175,6 +175,8 @@ a{text-decoration:none;color:inherit;}
 .adm-period{display:flex;gap:7px;}
 .adm-per-btn{flex:1;padding:9px;border-radius:9px;background:var(--card2);border:1px solid var(--border);color:var(--text2);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .2s;}
 .adm-per-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.adm-btn-revoke{flex:1;padding:0 14px;border-radius:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
+.adm-btn-revoke:hover{background:rgba(239,68,68,.18);}
 .adm-mod-item{background:var(--card2);border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:9px;}
 .adm-mod-ttl{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;}
 .adm-mod-meta{font-size:10.5px;color:var(--text3);margin-bottom:9px;line-height:1.5;}
@@ -401,6 +403,18 @@ select.form-input option{background:var(--card);}
 }
 .pro-counter-dot{width:10px;height:10px;border-radius:50%;background:rgba(244,74,34,.25);}
 .pro-counter-dot.used{background:var(--accent);box-shadow:0 0 6px rgba(244,74,34,.5);}
+/* Premium Подписка — блоки преимуществ */
+.prem-block{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px;margin-bottom:11px;}
+.prem-block-h{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:10px;}
+.prem-row{display:flex;gap:9px;align-items:flex-start;margin-bottom:8px;}
+.prem-row:last-child{margin-bottom:0;}
+.prem-free,.prem-pro{flex-shrink:0;font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:6px;margin-top:1px;}
+.prem-free{background:var(--card2);border:1px solid var(--border);color:var(--text3);}
+.prem-pro{background:rgba(244,74,34,.12);border:1px solid rgba(244,74,34,.4);color:var(--accent);}
+.prem-txt{font-size:11.5px;color:var(--text2);line-height:1.5;}
+.prof-premium{font-size:11.5px;font-weight:600;margin-top:6px;}
+.prof-premium.is-prem{color:var(--accent);}
+.prof-premium.is-free{color:var(--text3);}
 .btn-pro-activate{
   width:100%;padding:15px;border-radius:13px;font-size:13.5px;font-weight:800;
   letter-spacing:.05em;
@@ -623,7 +637,7 @@ select.form-input option{background:var(--card);}
         <button class="toggle-opt"        id="togResume" onclick="togglePostType('resume')">🧑‍💻 Резюме</button>
       </div>
       <div class="form-group">
-        <label class="form-label">Заголовок</label>
+        <label class="form-label" id="titleLbl">Заголовок</label>
         <input class="form-input" id="fTitle" type="text" placeholder="Например: UI/UX дизайнер для стартапа" oninput="checkForm()"/>
       </div>
       <div class="form-group">
@@ -638,7 +652,7 @@ select.form-input option{background:var(--card);}
           <option>✍️ Копирайтинг</option>
         </select>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="budgetGroup">
         <label class="form-label" id="budgetLbl">Бюджет</label>
         <div class="budget-row">
           <div class="form-group">
@@ -657,7 +671,7 @@ select.form-input option{background:var(--card);}
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Описание</label>
+        <label class="form-label" id="descLbl">Описание</label>
         <textarea class="form-input" id="fDesc" placeholder="Опиши задачу или свои навыки подробнее..."></textarea>
       </div>
       <div class="form-group">
@@ -690,6 +704,7 @@ select.form-input option{background:var(--card);}
       <div class="prof-name" id="profName">Загрузка...</div>
       <div class="prof-uname" id="profUname"></div>
       <div class="prof-id" id="profId"></div>
+      <div class="prof-premium" id="profPremium"></div>
       <div id="adminBadge" style="display:none;" class="admin-badge">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -773,7 +788,10 @@ select.form-input option{background:var(--card);}
         <button class="adm-per-btn" data-period="3" onclick="selectPremPeriod(this,3)">3 месяца</button>
         <button class="adm-per-btn" data-period="forever" onclick="selectPremPeriod(this,'forever')">Навсегда</button>
       </div>
-      <button class="btn-submit" style="margin-top:12px;" onclick="grantPremium()">Выдать Premium</button>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn-submit" style="flex:1;" onclick="grantPremium()">Выдать Premium</button>
+        <button class="adm-btn-revoke" onclick="revokePremium()">Забрать Premium</button>
+      </div>
     </div>
 
     <!-- Секция модерации -->
@@ -875,23 +893,27 @@ select.form-input option{background:var(--card);}
 <div class="modal-overlay" id="proLimitModal">
   <div class="modal-sheet" style="position:relative;">
     <div class="modal-handle"></div>
-    <div class="pro-limit-ico">🚀</div>
-    <div class="modal-title" style="text-align:center;">Лимит бесплатных откликов</div>
-    <div class="modal-sub" style="text-align:center;margin-top:6px;">
-      Вы использовали все <strong id="proLimitCount">3</strong> бесплатных отклика на сегодня.<br/>
-      Активируйте PRO на 30 дней для безлимитных откликов и доступа к эксклюзивным заказам.
+    <div class="pro-limit-ico">⭐</div>
+    <div class="modal-title" style="text-align:center;">Premium Подписка</div>
+    <div class="modal-sub" style="text-align:center;margin-top:6px;margin-bottom:16px;">
+      Больше возможностей для исполнителей и заказчиков.
     </div>
-    <div class="pro-limit-counter" id="proLimitDots"></div>
-    <div style="background:rgba(244,74,34,.06);border:1px solid rgba(244,74,34,.2);border-radius:12px;padding:14px;margin-bottom:16px;">
-      <div style="font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;">PRO включает:</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.7;">
-        ✅ Неограниченные отклики<br/>
-        ✅ Доступ к эксклюзивным вакансиям<br/>
-        ✅ Приоритетное отображение резюме<br/>
-        ✅ Значок PRO в профиле
-      </div>
+
+    <!-- Для исполнителей -->
+    <div class="prem-block">
+      <div class="prem-block-h">🧑‍💻 Для исполнителей</div>
+      <div class="prem-row"><span class="prem-free">Бесплатно</span><span class="prem-txt">25 откликов в день · нет доступа к Premium-вакансиям ⭐</span></div>
+      <div class="prem-row"><span class="prem-pro">Premium</span><span class="prem-txt">Безлимит откликов на любые вакансии, включая ⭐</span></div>
     </div>
-    <button class="btn-pro-activate" onclick="initPayment('pro_30d')">⭐ КУПИТЬ PRO — 450 STARS (~9 USDT)</button>
+
+    <!-- Для заказчиков -->
+    <div class="prem-block">
+      <div class="prem-block-h">💼 Для заказчиков</div>
+      <div class="prem-row"><span class="prem-free">Бесплатно</span><span class="prem-txt">До 3 публикаций в день</span></div>
+      <div class="prem-row"><span class="prem-pro">Premium</span><span class="prem-txt">До 10 публикаций в день · выделение карточек цветом и значком ⭐</span></div>
+    </div>
+
+    <button class="btn-pro-activate" onclick="initPayment('pro_30d')">⭐ ОФОРМИТЬ PREMIUM — 450 STARS (~9 USDT)</button>
     <button class="btn-pro-later" onclick="closeProModal()">Позже</button>
   </div>
 </div>
@@ -1206,7 +1228,7 @@ function renderJobs(filter = 'all') {
           ? `<button class="btn-apply" onclick="openApplyModal('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}',${isPremJob})">ОТКЛИКНУТЬСЯ</button>`
           : isAdmin
             ? `<button class="btn-apply" onclick="approveJob('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}')">✅ Одобрить</button>`
-            : `<span style="font-size:10px;color:var(--text3);">Ваша платформа</span>`
+            : `<span style="font-size:10px;color:var(--text3);">—</span>`
         }
       </div>
     </div>`;
@@ -1228,7 +1250,7 @@ function openApplyModal(jobId, jobTitle, authorTid, isPremJob) {
   // 3Б) Free не может откликаться на Premium-вакансии
   const isPrem = !!CUR_USER?.is_premium || CUR_USER?.is_admin === true;
   if (isPremJob && !isPrem) {
-    showToast('Отклики на Premium-вакансии доступны только владельцам Premium-аккаунта!', true);
+    notify('Только для Premium', 'Отклики на Premium-вакансии доступны только владельцам Premium-аккаунта!');
     haptic('error');
     return;
   }
@@ -1249,19 +1271,8 @@ function closeModal() {
 }
 
 function openProModal() {
-  // Обновляем счётчик
-  const limit = FREE_APPLY_LIMIT;
-  document.getElementById('proLimitCount').textContent = limit;
-  // Рисуем точки прогресса
-  const dots = document.getElementById('proLimitDots');
-  dots.innerHTML = '';
-  for (let i = 0; i < limit; i++) {
-    const d = document.createElement('div');
-    d.className = 'pro-counter-dot' + (i < freeResponsesUsed ? ' used' : '');
-    dots.appendChild(d);
-  }
   document.getElementById('proLimitModal').classList.add('open');
-  haptic('error');
+  haptic('warning');
 }
 
 function closeProModal() {
@@ -1302,7 +1313,7 @@ async function submitApply() {
   if (!isAdminUser && !isPremUser) {
     const used = await countAppliesLast24h(CUR_USER?.telegram_id);
     if (used >= LIMIT_APPLY_FREE) {
-      showToast(`Лимит бесплатного аккаунта: ${LIMIT_APPLY_FREE} откликов в сутки. Оформи Premium для безлимита.`, true);
+      notify('Лимит откликов', `Бесплатно — ${LIMIT_APPLY_FREE} откликов в сутки. Оформи Premium для безлимита.`);
       haptic('error');
       closeModal();
       openProModal();
@@ -1401,9 +1412,28 @@ async function deleteJob(id) {
 // ════════════════════════════════════════
 function togglePostType(t) {
   postType = t;
-  document.getElementById('togJob').classList.toggle('active', t === 'job');
-  document.getElementById('togResume').classList.toggle('active', t === 'resume');
-  document.getElementById('budgetLbl').textContent = t === 'job' ? 'Бюджет' : 'Ставка';
+  const isJob = t === 'job';
+  document.getElementById('togJob').classList.toggle('active', isJob);
+  document.getElementById('togResume').classList.toggle('active', !isJob);
+  // Резюме: скрываем блок бюджета полностью
+  const budgetGroup = document.getElementById('budgetGroup');
+  if (budgetGroup) budgetGroup.style.display = isJob ? '' : 'none';
+  // Плейсхолдеры
+  const title = document.getElementById('fTitle');
+  const desc  = document.getElementById('fDesc');
+  const titleLbl = document.getElementById('titleLbl');
+  const descLbl  = document.getElementById('descLbl');
+  if (isJob) {
+    if (titleLbl) titleLbl.textContent = 'Заголовок';
+    title.placeholder = 'Например: UI/UX дизайнер для стартапа';
+    if (descLbl) descLbl.textContent = 'Описание';
+    desc.placeholder = 'Опиши задачу подробнее...';
+  } else {
+    if (titleLbl) titleLbl.textContent = 'Желаемая должность';
+    title.placeholder = 'Например: Frontend-разработчик';
+    if (descLbl) descLbl.textContent = 'О себе, навыки и опыт';
+    desc.placeholder = 'Расскажи о своих навыках, опыте и желаемых проектах...';
+  }
   haptic('light');
 }
 
@@ -1570,7 +1600,7 @@ async function handlePost() {
 
   // ── 2) ЗАЩИТА ОТ ССЫЛОК И СПАМА (для ВСЕХ) ──
   const spam = validateAntiSpam([title, desc, contact].join(' \n '));
-  if (!spam.ok) { showToast(spam.msg, true); haptic('error'); return; }
+  if (!spam.ok) { notify('Публикация запрещена', spam.msg); haptic('error'); return; }
 
   // ── 3А) ЛИМИТ ПУБЛИКАЦИЙ за 24ч (3 free / 10 premium) ──
   const isPrem  = !!CUR_USER?.is_premium;
@@ -1579,9 +1609,12 @@ async function handlePost() {
     const posted = await countPostsLast24h(CUR_USER?.telegram_id);
     const limit  = isPrem ? LIMIT_POST_PREM : LIMIT_POST_FREE;
     if (posted >= limit) {
-      showToast(isPrem
-        ? `Лимит Premium: ${LIMIT_POST_PREM} вакансий в сутки исчерпан.`
-        : `Лимит бесплатного аккаунта: ${LIMIT_POST_FREE} вакансии в сутки. Оформи Premium для 10/день.`, true);
+      if (isPrem) {
+        notify('Лимит достигнут', `Лимит Premium: ${LIMIT_POST_PREM} публикаций в сутки исчерпан. Попробуй завтра.`);
+      } else {
+        notify('Лимит бесплатного тарифа', `Бесплатно — ${LIMIT_POST_FREE} публикации в сутки. Оформи Premium, чтобы публиковать до ${LIMIT_POST_PREM} в день.`);
+        openProModal(); // автоматически всплывает экран тарифов
+      }
       haptic('error');
       return;
     }
@@ -1593,14 +1626,16 @@ async function handlePost() {
   if (TG) TG.MainButton.showProgress(false);
 
   // ── 1) Новая вакансия → status 'pending' (на модерацию). Premium → is_premium_job ──
+  const isResume = postType === 'resume';
   const payload = {
     title,
     category:            document.getElementById('fCategory').value,
-    budget:              document.getElementById('fBudget').value.trim() || null,
-    currency:            selCur,
+    budget:              isResume ? null : (document.getElementById('fBudget').value.trim() || null),
+    currency:            isResume ? null : selCur,
     description:         desc || null,
     contacts:            contact,
     status:              'pending',
+    post_type:           isResume ? 'resume' : 'vacancy',
     is_premium_job:      isPrem === true,
     author_telegram_id:  CUR_USER?.telegram_id || null,
   };
@@ -1687,10 +1722,32 @@ async function modReject(id){
 }
 
 // Выдача Premium по telegram_id или UUID
+async function revokePremium(){
+  if (!CUR_USER?.is_admin) return;
+  const raw = document.getElementById('admPremId').value.trim();
+  if (!raw){ notify('Внимание', 'Укажите Telegram ID или UUID пользователя'); return; }
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw);
+  const field = isUuid ? 'id' : 'telegram_id';
+  try {
+    const { data, error } = await db.from('users')
+      .update({ premium_until: null })
+      .eq(field, raw)
+      .select();
+    if (error) throw error;
+    if (!data || !data.length){ notify('Не найдено', 'Пользователь с таким ID не найден'); return; }
+    haptic('success');
+    showToast('🚫 Premium аннулирован');
+    document.getElementById('admPremId').value = '';
+  } catch(e){
+    console.error('revokePremium', e);
+    notify('Ошибка', 'Не удалось забрать Premium. Попробуйте снова.');
+  }
+}
+
 async function grantPremium(){
   if (!CUR_USER?.is_admin) return;
   const raw = document.getElementById('admPremId').value.trim();
-  if (!raw){ showToast('⚠️ Укажите ID пользователя', true); return; }
+  if (!raw){ notify('Внимание', 'Укажите Telegram ID или UUID пользователя'); return; }
 
   // вычисляем premium_until
   let until;
@@ -1710,13 +1767,13 @@ async function grantPremium(){
       .eq(field, raw)
       .select();
     if (error) throw error;
-    if (!data || !data.length){ showToast('⚠️ Пользователь не найден', true); return; }
+    if (!data || !data.length){ notify('Не найдено', 'Пользователь с таким ID не найден'); return; }
     haptic('success');
     showToast(`✅ Premium выдан до ${admPremPeriod==='forever'?'∞':new Date(until).toLocaleDateString('ru-RU')}`);
     document.getElementById('admPremId').value = '';
   } catch(e){
     console.error('grantPremium', e);
-    showToast('❌ Ошибка выдачи Premium', true);
+    notify('Ошибка', 'Не удалось выдать Premium. Попробуйте снова.');
   }
 }
 
@@ -1726,7 +1783,19 @@ async function grantPremium(){
 function renderProfile() {
   if (!CUR_USER) return;
   const u = CUR_USER;
-  document.getElementById('profName').textContent = u.first_name || 'Пользователь';
+  const premStar = u.is_premium ? ' ⭐' : '';
+  document.getElementById('profName').textContent = (u.first_name || 'Пользователь') + premStar;
+  // Статус подписки
+  const pp = document.getElementById('profPremium');
+  if (u.is_premium && u.premium_until) {
+    const d = new Date(u.premium_until);
+    const dateStr = (u.premium_until.startsWith('2099')) ? 'бессрочно' : d.toLocaleDateString('ru-RU');
+    pp.textContent = 'Premium активен до: ' + dateStr;
+    pp.className = 'prof-premium is-prem';
+  } else {
+    pp.textContent = 'Базовый тариф';
+    pp.className = 'prof-premium is-free';
+  }
   document.getElementById('profUname').textContent = u.username ? '@' + u.username.replace(/^@/,'') : '';
   document.getElementById('profId').textContent = 'ID: ' + u.telegram_id;
   const img = document.getElementById('profAvaImg');
@@ -1922,6 +1991,25 @@ function timeAgo(iso) {
 }
 
 let toastTimer;
+
+// ════════════════════════════════════════
+//  УВЕДОМЛЕНИЯ — нативный Telegram popup (текст не обрезается)
+// ════════════════════════════════════════
+function notify(title, message){
+  try {
+    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.showPopup === 'function') {
+      window.Telegram.WebApp.showPopup({
+        title: title || 'Внимание',
+        message: message || '',
+        buttons: [{ type: 'ok' }]
+      });
+      return;
+    }
+  } catch(e) { /* фолбэк ниже */ }
+  // Фолбэк, если API недоступно (например, открыто в обычном браузере)
+  showToast(message || title, true);
+}
+
 function showToast(msg, isErr = false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
