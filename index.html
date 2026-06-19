@@ -32,8 +32,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 :root{
-  --bg:#0d0d0e;--bg2:#121214;--card:#1c1c1c;--card2:#222222;
-  --border:rgba(192,192,192,.10);--border-hi:rgba(192,192,192,.28);
+  --bg:#09090b;--bg2:#0c0c0e;--card:#141417;--card2:#1a1a1e;
+  --border:rgba(255,255,255,.05);--border-hi:rgba(255,255,255,.14);
   --chrome:linear-gradient(135deg,#8a8a8a 0%,#d4d4d4 30%,#b0b0b0 50%,#e8e8e8 65%,#9a9a9a 80%,#c8c8c8 100%);
   --text:#E8E8E8;--text2:#888;--text3:#555;
   --accent:#f44a22;--accent2:#ff6a45;--green:#22c55e;--red:#ef4444;
@@ -65,7 +65,7 @@ a{text-decoration:none;color:inherit;}
 
 /* ── HEADER ── */
 #hdr{height:var(--header-h);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
-  padding:0 14px;background:var(--bg);border-bottom:1px solid var(--border);position:relative;z-index:30;transition:background .3s,border-color .3s;}
+  padding:0 14px;background:rgba(12,12,14,.8);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border-bottom:1px solid var(--border);position:relative;z-index:30;}
 #hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(192,192,192,.15),transparent);pointer-events:none;}
 .logo-wrap{display:flex;align-items:center;gap:9px;min-width:0;}
@@ -89,9 +89,9 @@ a{text-decoration:none;color:inherit;}
 .page-sub{font-size:12px;color:var(--text3);margin-bottom:14px;}
 
 /* ── BOTTOM NAV ── */
-#nav{height:calc(var(--nav-h) + var(--safe-bot));flex-shrink:0;background:var(--bg);
+#nav{height:calc(var(--nav-h) + var(--safe-bot));flex-shrink:0;background:rgba(12,12,14,.8);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
   border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:5px;
-  position:relative;z-index:30;transition:background .3s;}
+  position:relative;z-index:30;}
 #nav::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(192,192,192,.15),transparent);}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -107,7 +107,7 @@ a{text-decoration:none;color:inherit;}
 .add-ring{width:44px;height:44px;border-radius:13px;margin-top:-16px;
   background:linear-gradient(135deg,#f44a22,#ff6a45);
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 14px rgba(244,74,34,.28);border:1.5px solid rgba(255,255,255,.12);
+  box-shadow:0 4px 18px rgba(244,74,34,.32),0 0 0 1px rgba(244,74,34,.1);border:1.5px solid rgba(255,255,255,.1);
   transition:transform .2s,box-shadow .2s;}
 .nav-add:active .add-ring{transform:scale(.93);box-shadow:0 2px 8px rgba(244,74,34,.2);}
 .nav-add:hover .add-ring{transform:scale(1.05);}
@@ -183,6 +183,12 @@ a{text-decoration:none;color:inherit;}
 .adm-mod-row{display:flex;gap:7px;}
 .adm-btn-ok{flex:1;padding:8px;border-radius:8px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#22c55e;font-size:11.5px;font-weight:700;cursor:pointer;}
 .adm-btn-no{flex:1;padding:8px;border-radius:8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#ef4444;font-size:11.5px;font-weight:700;cursor:pointer;}
+/* Профиль — плашки статистики */
+.prof-stats{display:flex;gap:8px;width:100%;margin-top:16px;}
+.prof-stat{flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:13px;padding:12px 8px;text-align:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.prof-stat-val{font-size:18px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;}
+.prof-stat:first-child .prof-stat-val{color:var(--accent);}
+.prof-stat-lbl{font-size:10px;color:var(--text3);letter-spacing:.04em;text-transform:uppercase;}
 .btn-apply{padding:8px 15px;border-radius:9px;font-size:11px;font-weight:700;letter-spacing:.04em;
   background:var(--card2);border:1px solid var(--border-hi);color:var(--text);
   transition:border-color .18s,box-shadow .18s;white-space:nowrap;position:relative;overflow:hidden;}
@@ -197,12 +203,12 @@ a{text-decoration:none;color:inherit;}
 .btn-del svg{width:14px;height:14px;stroke:#f87171;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 
 /* ── FILTER CHIPS ── */
-.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:11px;scrollbar-width:none;}
-.chips::-webkit-scrollbar{display:none;}
-.chip{flex-shrink:0;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:600;
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding-bottom:12px;}
+
+.chip{display:flex;align-items:center;justify-content:center;gap:4px;padding:9px 6px;border-radius:13px;font-size:11.5px;font-weight:600;white-space:nowrap;
   border:1px solid var(--border);background:var(--card2);color:var(--text2);
   transition:all .18s;cursor:pointer;white-space:nowrap;}
-.chip.active{border-color:var(--border-hi);background:rgba(192,192,192,.08);color:var(--text);}
+.chip.active{border-color:var(--accent);background:rgba(244,74,34,.12);color:var(--accent);box-shadow:0 0 14px rgba(244,74,34,.18);}
 
 /* ── PRO CARDS ── */
 .pro-card{position:relative;}
@@ -340,12 +346,11 @@ select.form-input option{background:var(--card);}
 .prof-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:72px;
   background:linear-gradient(135deg,rgba(244,74,34,.07),rgba(192,192,192,.04));pointer-events:none;}
 .prof-ava-wrap{position:relative;margin-bottom:13px;}
-.prof-ava{width:68px;height:68px;border-radius:50%;object-fit:cover;display:block;border:2px solid rgba(192,192,192,.2);}
-.prof-ava-fallback{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#252525,#1e1e1e);
-  border:2px solid rgba(192,192,192,.2);display:flex;align-items:center;justify-content:center;
+.prof-ava{width:68px;height:68px;border-radius:50%;object-fit:cover;display:block;border:2px solid var(--accent);box-shadow:0 0 16px rgba(244,74,34,.4);}
+.prof-ava-fallback{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#1f1f23,#141417);
+  border:2px solid var(--accent);box-shadow:0 0 16px rgba(244,74,34,.4);display:flex;align-items:center;justify-content:center;
   font-size:26px;font-weight:800;color:var(--text);letter-spacing:-.5px;}
-.prof-ava-ring{position:absolute;inset:-3px;border-radius:50%;background:var(--chrome);
-  background-size:200% auto;animation:shimmer 3s linear infinite;z-index:-1;}
+.prof-ava-ring{position:absolute;inset:-4px;border-radius:50%;background:radial-gradient(circle,rgba(244,74,34,.35),transparent 70%);z-index:-1;}
 .prof-name{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.3px;margin-bottom:2px;}
 .prof-uname{font-size:12px;color:var(--text3);margin-bottom:12px;}
 .prof-id{font-size:10px;color:var(--text3);background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;}
@@ -711,6 +716,12 @@ select.form-input option{background:var(--card);}
         </svg>
         АДМИНИСТРАТОР
       </div>
+      <!-- Минималистичные плашки статистики в одну строку -->
+      <div class="prof-stats">
+        <div class="prof-stat"><div class="prof-stat-val" id="statRating">5.0</div><div class="prof-stat-lbl">Рейтинг</div></div>
+        <div class="prof-stat"><div class="prof-stat-val" id="statJobs">0</div><div class="prof-stat-lbl">Проектов</div></div>
+        <div class="prof-stat"><div class="prof-stat-val" id="statApps">0</div><div class="prof-stat-lbl">Откликов</div></div>
+      </div>
     </div>
     <!-- Role -->
     <div class="prof-section" id="roleSect">
@@ -979,11 +990,12 @@ async function countAppliesLast24h(tid){
 // ════════════════════════════════════════
 //  АНТИ-СПАМ ВАЛИДАТОР (для всех пользователей)
 // ════════════════════════════════════════
+// Только ЯВНЫЙ скам/спам. Базовые слова (SMM, Crypto, Бот, Telegram, Разработка) НЕ блокируются.
 const BANNED_WORDS = [
-  'казино','casino','ставк','букмекер','crypto pump','пирамид','хайп','hyip',
-  'нюдс','порно','porn','intim','эскорт','escort','наркот','мефедрон','закладк',
-  'обнал','скам','scam','развод на деньги','выигрыш','лотере','инвестиц гаранти',
-  'заработок без вложен','лёгкие деньги','легкие деньги','бинарн опцион'
+  'казино','casino','1xbet','1хбет','1 хбет','букмекер','ставки на спорт',
+  'игровые автоматы','слоты казино','онлайн слот','азартны',
+  'порнограф','эскорт-услуг','интим-услуг','наркотик','мефедрон','закладк',
+  'обнал','финансовая пирамида','лохотрон','ставки на матч'
 ];
 
 function validateAntiSpam(text){
@@ -1843,6 +1855,7 @@ async function loadMyJobs() {
       .eq('author_telegram_id', CUR_USER.telegram_id)
       .order('created_at', { ascending: false });
     const list = data || [];
+    const sj = document.getElementById('statJobs'); if (sj) sj.textContent = list.filter(j=>j.status!=='archived').length;
     if (!list.length) {
       el.innerHTML = '<div class="empty-box" style="border:none;padding:14px 0;"><div class="empty-sub">Нет активных объявлений</div></div>';
       return;
@@ -1917,6 +1930,7 @@ async function loadMyApps() {
       .in('job_id', jobIds)
       .order('created_at', { ascending: false });
     if (error) throw error;
+    const sa = document.getElementById('statApps'); if (sa) sa.textContent = (apps || []).length;
     if (!apps || !apps.length) {
       el.innerHTML = '<div class="empty-box" style="border:none;padding:14px 0;"><div class="empty-sub">Откликов пока нет</div></div>';
       return;
