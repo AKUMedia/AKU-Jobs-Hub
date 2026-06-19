@@ -430,6 +430,14 @@ select.form-input option{background:var(--card);}
 }
 .btn-pro-activate:hover{filter:brightness(1.08);transform:translateY(-1px);}
 .btn-pro-activate:active{transform:scale(.99);}
+/* Пульсирующее неоновое свечение кнопки оплаты */
+@keyframes proPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(244,74,34,.45),0 6px 22px rgba(244,74,34,.3);}
+  50%{box-shadow:0 0 22px 6px rgba(244,74,34,.55),0 8px 30px rgba(244,74,34,.45);}
+}
+.btn-pro-pulse{animation:proPulse 2s ease-in-out infinite;}
+.btn-pro-pulse:hover{animation:none;}
+
 .btn-pro-later{
   width:100%;padding:11px;border-radius:10px;font-size:12px;font-weight:600;
   color:var(--text3);background:transparent;border:1px solid var(--border);
@@ -735,6 +743,15 @@ select.form-input option{background:var(--card);}
         <div class="role-saving-dot"></div><span>Сохраняем...</span>
       </div>
     </div>
+    <!-- Premium CTA -->
+    <div class="prof-section" id="profPremiumCta" style="display:none;">
+      <div class="prof-section-ttl">AKU Premium</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px;">
+        Безлимит откликов на любые вакансии, приоритет в ленте и доступ к закрытым B2B-заказам.
+      </div>
+      <button class="btn-pro-activate btn-pro-pulse" onclick="processPremiumPayment()">⭐ Активировать AKU Premium — 9$ / 650 ₽</button>
+    </div>
+
     <!-- My jobs -->
     <div class="prof-section">
       <div class="prof-section-ttl">Мои вакансии</div>
@@ -924,7 +941,7 @@ select.form-input option{background:var(--card);}
       <div class="prem-row"><span class="prem-pro">Premium</span><span class="prem-txt">До 10 публикаций в день · выделение карточек цветом и значком ⭐</span></div>
     </div>
 
-    <button class="btn-pro-activate" onclick="initPayment('pro_30d')">⭐ ОФОРМИТЬ PREMIUM — 450 STARS (~9 USDT)</button>
+    <button class="btn-pro-activate btn-pro-pulse" onclick="processPremiumPayment()">⭐ Активировать AKU Premium — 9$ / 650 ₽</button>
     <button class="btn-pro-later" onclick="closeProModal()">Позже</button>
   </div>
 </div>
@@ -939,7 +956,10 @@ const SB_URL  = 'https://wsizgctvtazcpwykffbs.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzaXpnY3R2dGF6Y3B3eWtmZmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NjMyMjksImV4cCI6MjA5NjEzOTIyOX0.US3Kjh_eFKh-6GtxY738-Sj-vmGO1X22SUxX0OtcPZs';
 const BOT_TOKEN   = '8887029200:AAELHZa7jTuP3LHj-pNrDMUtrZdheRMC9S0';
 // 🔧 ЗАМЕНИ на URL своего бэкенда (Render, Railway, VPS)
-const BACKEND_URL = 'https://your-bot-backend.onrender.com';
+// Бэкенд: локально → :3000, в проде → твой публичный URL (ngrok / Render / VPS)
+const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:3000'
+  : 'https://ТВОЙ_NGROK_ИЛИ_ПРОД_URL';  // 🔧 ЗАМЕНИ на публичный URL бэкенда
 
 // Тарифы (Stars)
 const TARIFFS = {
@@ -1432,6 +1452,105 @@ function setCur(btn) {
 // ════════════════════════════════════════
 
 // Универсальная функция инициализации оплаты
+
+// ════════════════════════════════════════
+//  ОПЛАТА PREMIUM (Telegram WebApp Payments)
+// ════════════════════════════════════════
+const PREMIUM_DAYS = 30;
+
+async function processPremiumPayment(){
+  closeProModal();
+  if (typeof closeVacModal === 'function') closeVacModal();
+  haptic('medium');
+
+  if (!window.Telegram || !window.Telegram.WebApp) {
+    showToast('💡 Оплата доступна только внутри Telegram', true);
+    return;
+  }
+  const TGW = window.Telegram.WebApp;
+
+  // 1) POST на бэкенд → createInvoiceLink (Telegram Stars)
+  let invoiceUrl = null;
+  try {
+    showToast('⏳ Создаём счёт...');
+    const res = await fetch(`${BACKEND_URL}/api/create-invoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id:    CUR_USER?.telegram_id,
+        user_uuid:  CUR_USER?.id || null,
+        tariff_key: 'pro_30d',
+        stars:      (TARIFFS.pro_30d?.stars || 450),
+        title:      'AKU Premium — 30 дней',
+        description:'Безлимит откликов, приоритет в ленте и доступ к закрытым B2B-заказам',
+        amount_usd: 9,
+        amount_rub: 650
+      })
+    });
+    if (!res.ok) throw new Error('Backend ' + res.status);
+    const data = await res.json();
+    invoiceUrl = data.invoice_link || data.url || data.link || null;
+  } catch(e) {
+    console.warn('create-invoice error', e);
+  }
+
+  if (!invoiceUrl) {
+    notify('Оплата временно недоступна', 'Не удалось создать счёт. Проверьте, что бэкенд запущен, или напишите менеджеру @akumediamgr для активации Premium.');
+    return;
+  }
+
+  // 2) Нативное окно оплаты Telegram
+  TGW.openInvoice(invoiceUrl, async (status) => {
+    if (status === 'paid') {
+      haptic('success');
+      await activatePremiumInDB();
+    } else if (status === 'cancelled') {
+      showToast('Оплата отменена');
+    } else if (status === 'failed') {
+      showToast('❌ Платёж не прошёл', true);
+    }
+  });
+}
+
+// Запись Premium в Supabase: is_premium=true, premium_until = now + 30 дней
+async function activatePremiumInDB(){
+  try {
+    const until = new Date();
+    until.setDate(until.getDate() + PREMIUM_DAYS);
+    const untilIso = until.toISOString();
+
+    // Находим пользователя по UUID (если есть) или telegram_id
+    const field = CUR_USER?.id ? 'id' : 'telegram_id';
+    const value = CUR_USER?.id || CUR_USER?.telegram_id;
+
+    const { error } = await db.from('users')
+      .update({ is_premium: true, premium_until: untilIso })
+      .eq(field, value);
+    if (error) throw error;
+
+    // Мгновенно обновляем локальное состояние + интерфейс
+    CUR_USER.is_premium   = true;
+    CUR_USER.is_pro       = true;
+    CUR_USER.premium_until = untilIso;
+    renderProfile();        // загорается ⭐
+    loadJobs && loadJobs(); // премиум-доступ к ленте
+
+    // Нативное окно успеха
+    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.showPopup === 'function') {
+      window.Telegram.WebApp.showPopup({
+        title: 'Успешно!',
+        message: 'Премиум тариф активирован на 30 дней! Спасибо за поддержку AKU Jobs Hub.',
+        buttons: [{ type: 'ok' }]
+      });
+    } else {
+      showToast('🎉 Premium активирован на 30 дней!');
+    }
+  } catch(e) {
+    console.error('activatePremiumInDB', e);
+    notify('Ошибка активации', 'Оплата прошла, но не удалось обновить статус. Напишите @akumediamgr — активируем вручную.');
+  }
+}
+
 async function initPayment(tariffKey, meta = {}) {
   const tariff = TARIFFS[tariffKey];
   if (!tariff) { showToast('❌ Неизвестный тариф', true); return; }
@@ -1775,6 +1894,9 @@ function renderProfile() {
     pp.textContent = 'Базовый тариф';
     pp.className = 'prof-premium is-free';
   }
+  // Premium-CTA: показываем только базовым пользователям
+  const cta = document.getElementById('profPremiumCta');
+  if (cta) cta.style.display = u.is_premium ? 'none' : '';
   document.getElementById('profUname').textContent = u.username ? '@' + u.username.replace(/^@/,'') : '';
   document.getElementById('profId').textContent = 'ID: ' + u.telegram_id;
   const img = document.getElementById('profAvaImg');
