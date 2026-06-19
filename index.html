@@ -987,41 +987,8 @@ async function countAppliesLast24h(tid){
   } catch(e){ console.warn('countApplies', e); return 0; }
 }
 
-// ════════════════════════════════════════
-//  АНТИ-СПАМ ВАЛИДАТОР (для всех пользователей)
-// ════════════════════════════════════════
 // Только ЯВНЫЙ скам/спам. Базовые слова (SMM, Crypto, Бот, Telegram, Разработка) НЕ блокируются.
-const BANNED_WORDS = [
-  'казино','casino','1xbet','1хбет','1 хбет','букмекер','ставки на спорт',
-  'игровые автоматы','слоты казино','онлайн слот','азартны',
-  'порнограф','эскорт-услуг','интим-услуг','наркотик','мефедрон','закладк',
-  'обнал','финансовая пирамида','лохотрон','ставки на матч'
-];
 
-function validateAntiSpam(text, opts){
-  // opts.isImport === true → системный импорт/парсер (Hirify, source_url): фильтр игнорируется
-  if (opts && opts.isImport) return { ok:true };
-  const t = (text || '').toLowerCase();
-  // 1) Ссылки и юзернеймы — мягкая блокировка с объяснением (type:'links')
-  if (/https?:\/\//i.test(t) || /t\.me/i.test(t) || /@\w/i.test(t) || /www\./i.test(t)) {
-    return {
-      ok:false,
-      type:'links',
-      title:'Проверка текста',
-      msg:'В тексте объявления обнаружены ссылки или юзернеймы. Пожалуйста, удалите их. Прямые контакты для связи можно будет указать в специальном поле вашего профиля, либо активируйте Premium-тариф.'
-    };
-  }
-  // 2) Запрещённые слова (явный скам) — жёсткая блокировка (type:'banned')
-  for (const w of BANNED_WORDS){
-    if (t.includes(w)) return {
-      ok:false,
-      type:'banned',
-      title:'Публикация запрещена',
-      msg:'Текст содержит запрещённые слова (азартные игры, ставки, мошенничество) и не может быть опубликован.'
-    };
-  }
-  return { ok:true };
-}
 
 
 // ════════════════════════════════════════
@@ -1089,18 +1056,10 @@ function haptic(t) {
   } catch(e){}
 }
 
-let mbBound = false;
 function updateMainButton() {
+  // Нижняя Telegram MainButton отключена — публикация только через кнопку «ОПУБЛИКОВАТЬ» в форме
   if (!TG) return;
-  const onPost = document.getElementById('pg-post').classList.contains('active');
-  const ok = isFormFilled() && agreeOk && !isPosting;
-  if (onPost && ok) {
-    if (!mbBound) { TG.MainButton.onClick(handlePost); mbBound = true; }
-    TG.MainButton.setParams({text:'Опубликовать вакансию',color:'#f44a22',text_color:'#ffffff',is_visible:true,is_active:true});
-    TG.MainButton.show();
-  } else {
-    TG.MainButton.hide();
-  }
+  try { TG.MainButton.hide(); } catch(e) {}
 }
 
 // ════════════════════════════════════════
@@ -1622,17 +1581,6 @@ async function handlePost() {
   const contact = document.getElementById('fContact').value.trim();
   const title   = document.getElementById('fTitle').value.trim();
 
-  // ── ЗАЩИТА ОТ ССЫЛОК И СПАМА (только при отправке) ──
-  // Системный импорт (парсер Hirify / source_url) — фильтр игнорируется, прямые контакты разрешены
-  const isImport = !!(window.__akuImport || (typeof pendingImportPayload !== 'undefined' && pendingImportPayload && pendingImportPayload.source_url));
-  const spam = validateAntiSpam([title, desc, contact].join(' \n '), { isImport });
-  if (!spam.ok) {
-    // Нативный Telegram-попап с понятным объяснением и кнопкой "Исправить"
-    notifyFix(spam.title || 'Проверка текста', spam.msg, spam.type === 'links' ? 'Исправить' : 'Понятно');
-    haptic('error');
-    return;
-  }
-
   // ── 3А) ЛИМИТ ПУБЛИКАЦИЙ за 24ч (3 free / 10 premium) ──
   const isPrem  = !!CUR_USER?.is_premium;
   const isAdminPost = CUR_USER?.is_admin === true;
@@ -2029,20 +1977,6 @@ let toastTimer;
 //  УВЕДОМЛЕНИЯ — нативный Telegram popup (текст не обрезается)
 // ════════════════════════════════════════
 
-// Нативный попап с кастомной кнопкой подтверждения (текст не обрезается)
-function notifyFix(title, message, btnText){
-  try {
-    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.showPopup === 'function') {
-      window.Telegram.WebApp.showPopup({
-        title: title || 'Внимание',
-        message: message || '',
-        buttons: [{ type: 'ok', text: btnText || 'Понятно' }]
-      });
-      return;
-    }
-  } catch(e) {}
-  showToast(message || title, true);
-}
 
 function notify(title, message){
   try {
