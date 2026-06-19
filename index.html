@@ -998,15 +998,27 @@ const BANNED_WORDS = [
   'обнал','финансовая пирамида','лохотрон','ставки на матч'
 ];
 
-function validateAntiSpam(text){
+function validateAntiSpam(text, opts){
+  // opts.isImport === true → системный импорт/парсер (Hirify, source_url): фильтр игнорируется
+  if (opts && opts.isImport) return { ok:true };
   const t = (text || '').toLowerCase();
-  // 1) Ссылки и юзернеймы запрещены всем
+  // 1) Ссылки и юзернеймы — мягкая блокировка с объяснением (type:'links')
   if (/https?:\/\//i.test(t) || /t\.me/i.test(t) || /@\w/i.test(t) || /www\./i.test(t)) {
-    return { ok:false, msg:'Публикация ссылок и контактных юзернеймов в тексте запрещена для защиты от спама!' };
+    return {
+      ok:false,
+      type:'links',
+      title:'Проверка текста',
+      msg:'В тексте объявления обнаружены ссылки или юзернеймы. Пожалуйста, удалите их. Прямые контакты для связи можно будет указать в специальном поле вашего профиля, либо активируйте Premium-тариф.'
+    };
   }
-  // 2) Запрещённые слова (цензура / скам)
+  // 2) Запрещённые слова (явный скам) — жёсткая блокировка (type:'banned')
   for (const w of BANNED_WORDS){
-    if (t.includes(w)) return { ok:false, msg:'Текст содержит запрещённые слова и не может быть опубликован.' };
+    if (t.includes(w)) return {
+      ok:false,
+      type:'banned',
+      title:'Публикация запрещена',
+      msg:'Текст содержит запрещённые слова (азартные игры, ставки, мошенничество) и не может быть опубликован.'
+    };
   }
   return { ok:true };
 }
@@ -1610,9 +1622,16 @@ async function handlePost() {
   const contact = document.getElementById('fContact').value.trim();
   const title   = document.getElementById('fTitle').value.trim();
 
-  // ── 2) ЗАЩИТА ОТ ССЫЛОК И СПАМА (для ВСЕХ) ──
-  const spam = validateAntiSpam([title, desc, contact].join(' \n '));
-  if (!spam.ok) { notify('Публикация запрещена', spam.msg); haptic('error'); return; }
+  // ── ЗАЩИТА ОТ ССЫЛОК И СПАМА (только при отправке) ──
+  // Системный импорт (парсер Hirify / source_url) — фильтр игнорируется, прямые контакты разрешены
+  const isImport = !!(window.__akuImport || (typeof pendingImportPayload !== 'undefined' && pendingImportPayload && pendingImportPayload.source_url));
+  const spam = validateAntiSpam([title, desc, contact].join(' \n '), { isImport });
+  if (!spam.ok) {
+    // Нативный Telegram-попап с понятным объяснением и кнопкой "Исправить"
+    notifyFix(spam.title || 'Проверка текста', spam.msg, spam.type === 'links' ? 'Исправить' : 'Понятно');
+    haptic('error');
+    return;
+  }
 
   // ── 3А) ЛИМИТ ПУБЛИКАЦИЙ за 24ч (3 free / 10 premium) ──
   const isPrem  = !!CUR_USER?.is_premium;
@@ -2009,6 +2028,22 @@ let toastTimer;
 // ════════════════════════════════════════
 //  УВЕДОМЛЕНИЯ — нативный Telegram popup (текст не обрезается)
 // ════════════════════════════════════════
+
+// Нативный попап с кастомной кнопкой подтверждения (текст не обрезается)
+function notifyFix(title, message, btnText){
+  try {
+    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.showPopup === 'function') {
+      window.Telegram.WebApp.showPopup({
+        title: title || 'Внимание',
+        message: message || '',
+        buttons: [{ type: 'ok', text: btnText || 'Понятно' }]
+      });
+      return;
+    }
+  } catch(e) {}
+  showToast(message || title, true);
+}
+
 function notify(title, message){
   try {
     if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.showPopup === 'function') {
