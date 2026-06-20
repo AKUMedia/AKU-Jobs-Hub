@@ -189,6 +189,56 @@ a{text-decoration:none;color:inherit;}
 .prof-stat-val{font-size:18px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;}
 .prof-stat:first-child .prof-stat-val{color:var(--accent);}
 .prof-stat-lbl{font-size:10px;color:var(--text3);letter-spacing:.04em;text-transform:uppercase;}
+/* Кнопка "Удалить вакансию" в ленте (для автора) */
+.btn-del-job{padding:8px 14px;border-radius:9px;font-size:11px;font-weight:700;letter-spacing:.04em;
+  background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:#ef4444;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.btn-del-job:hover{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.5);}
+.btn-del-job:active{transform:scale(.97);}
+/* Модалка причины удаления */
+.del-job-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;padding:10px 12px;background:var(--card2);border-radius:10px;border:1px solid var(--border);}
+.del-reasons{display:flex;flex-direction:column;gap:8px;}
+.del-reason-btn{padding:13px 14px;border-radius:11px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:600;text-align:left;cursor:pointer;transition:all .2s;}
+.del-reason-btn:hover{border-color:var(--accent);}
+.del-reason-btn.active{border-color:var(--accent);background:rgba(244,74,34,.1);color:var(--accent);}
+
+/* ════ PRO МОДАЛКА (премиум) ════ */
+.pro-modal-box{max-height:88vh;overflow-y:auto;}
+.pro-shimmer-head{text-align:center;padding:18px 14px;border-radius:16px;margin-bottom:14px;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#1a1208,#2a1a0a,#1a1208);border:1px solid rgba(244,74,34,.35);}
+.pro-shimmer-head::after{content:'';position:absolute;top:0;left:-150%;width:60%;height:100%;
+  background:linear-gradient(110deg,transparent,rgba(244,74,34,.18),rgba(255,180,80,.25),transparent);
+  animation:proShimmer 3s ease-in-out infinite;}
+@keyframes proShimmer{0%{left:-150%;}60%,100%{left:150%;}}
+.pro-diamond{font-size:34px;margin-bottom:6px;filter:drop-shadow(0 0 12px rgba(244,74,34,.6));}
+.pro-h{font-size:15px;font-weight:800;letter-spacing:.04em;color:#fff;line-height:1.35;
+  background:linear-gradient(90deg,#ff6a45,#ffb347,#ff6a45);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.pro-desc{font-size:12.5px;color:var(--text2);line-height:1.6;text-align:center;margin-bottom:14px;}
+.pro-price-badge{text-align:center;font-size:20px;font-weight:800;color:#fff;padding:12px;border-radius:14px;margin-bottom:16px;
+  background:linear-gradient(135deg,rgba(244,74,34,.18),rgba(244,74,34,.06));border:1px solid rgba(244,74,34,.4);}
+.pro-price-badge span{font-size:12px;font-weight:600;color:var(--text2);}
+.pro-section-label{font-size:11px;font-weight:700;color:var(--text2);margin:14px 0 9px;letter-spacing:.02em;}
+.pro-pay-btn{display:flex;align-items:center;gap:12px;padding:13px;border-radius:13px;margin-bottom:9px;text-decoration:none;
+  background:var(--card2);border:1px solid var(--border);transition:all .2s;}
+.pro-pay-btn:active{transform:scale(.98);}
+.pro-pay-rub:hover{border-color:rgba(80,160,255,.5);box-shadow:0 0 16px rgba(80,160,255,.15);}
+.pro-pay-crypto:hover{border-color:rgba(38,166,123,.5);box-shadow:0 0 16px rgba(38,166,123,.15);}
+.ppb-ic{font-size:22px;}
+.ppb-txt{flex:1;display:flex;flex-direction:column;gap:2px;}
+.ppb-txt b{font-size:13px;color:var(--text);}
+.ppb-txt small{font-size:10.5px;color:var(--text3);}
+.ppb-arr{color:var(--accent);font-size:18px;font-weight:700;}
+.pro-wallet{display:flex;align-items:center;gap:10px;width:100%;padding:12px;border-radius:12px;margin-bottom:9px;cursor:pointer;
+  background:var(--card2);border:1px solid var(--border);transition:all .2s;text-align:left;}
+.pro-wallet:hover{border-color:rgba(244,74,34,.4);}
+.pro-wallet:active{transform:scale(.98);}
+.pw-net{font-size:10px;font-weight:800;color:var(--accent);background:rgba(244,74,34,.12);padding:4px 8px;border-radius:7px;white-space:nowrap;flex-shrink:0;}
+.pw-addr{flex:1;font-size:10.5px;color:var(--text2);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pw-copy{font-size:16px;color:var(--accent);flex-shrink:0;}
+.pro-note{font-size:11px;color:var(--text2);line-height:1.6;text-align:center;margin:14px 0;padding:11px;border-radius:11px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);}
+.pro-mgr-btn{display:block;text-align:center;padding:13px;border-radius:13px;text-decoration:none;font-weight:700;font-size:13px;color:#fff;
+  background:linear-gradient(135deg,#f44a22,#ff6a45);box-shadow:0 4px 18px rgba(244,74,34,.3);transition:all .2s;}
+.pro-mgr-btn:active{transform:scale(.98);}
+
 .btn-apply{padding:8px 15px;border-radius:9px;font-size:11px;font-weight:700;letter-spacing:.04em;
   background:var(--card2);border:1px solid var(--border-hi);color:var(--text);
   transition:border-color .18s,box-shadow .18s;white-space:nowrap;position:relative;overflow:hidden;}
@@ -857,6 +907,12 @@ select.form-input option{background:var(--card);}
     </svg>
     <span class="ni-lbl">AKU Hub</span>
   </button>
+  <button class="nav-btn" data-tab="pro" onclick="openProTab()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="6 3 18 3 22 9 12 22 2 9 6 3"/><path d="M2 9h20M12 3v6M7.5 9L12 22M16.5 9L12 22"/>
+    </svg>
+    <span class="ni-lbl">PRO</span>
+  </button>
   <button class="nav-btn" id="adminNavBtn" data-tab="admin" onclick="switchTab('admin',this)" style="display:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/>
@@ -943,6 +999,74 @@ select.form-input option{background:var(--card);}
 
     <button class="btn-pro-activate btn-pro-pulse" onclick="processPremiumPayment()">⭐ Активировать AKU Premium — 9$ / 650 ₽</button>
     <button class="btn-pro-later" onclick="closeProModal()">Позже</button>
+  </div>
+</div>
+
+<!-- МОДАЛКА: ПРИЧИНА УДАЛЕНИЯ -->
+<!-- ════ PRO МОДАЛКА ════ -->
+<div class="modal-overlay" id="proTabModal">
+  <div class="modal-box pro-modal-box">
+    <button class="modal-close" onclick="closeProTab()">✕</button>
+    <div class="pro-shimmer-head">
+      <div class="pro-diamond">💎</div>
+      <div class="pro-h">АКТИВАЦИЯ ПОДПИСКИ<br>AKU JOBS HUB PRO</div>
+    </div>
+    <div class="pro-desc">Получите полный доступ к премиальным вакансиям, продвинутым фильтрам откликов и приоритетной поддержке.</div>
+
+    <div class="pro-price-badge">💰 9$ / 650 ₽ <span>в месяц</span></div>
+
+    <div class="pro-section-label">⚠️ Выберите удобный способ оплаты:</div>
+
+    <!-- ЮMoney -->
+    <a class="pro-pay-btn pro-pay-rub" href="https://yoomoney.ru/to/4100118055761665" target="_blank" rel="noopener" onclick="haptic('light')">
+      <span class="ppb-ic">💵</span>
+      <span class="ppb-txt"><b>Российские рубли</b><small>Карты СНГ / МИР / СБП · ЮMoney</small></span>
+      <span class="ppb-arr">→</span>
+    </a>
+
+    <!-- CryptoBot -->
+    <a class="pro-pay-btn pro-pay-crypto" href="https://t.me/send?start=IVDt34fEvcmP" target="_blank" rel="noopener" onclick="haptic('light')">
+      <span class="ppb-ic">⚡️</span>
+      <span class="ppb-txt"><b>Криптовалюта</b><small>Быстрый чек CryptoBot</small></span>
+      <span class="ppb-arr">→</span>
+    </a>
+
+    <div class="pro-section-label">🪙 Или прямой перевод (нажми, чтобы скопировать адрес):</div>
+
+    <!-- TON -->
+    <button class="pro-wallet" onclick="copyWallet('UQDnZCrLcqVKjKDzTBMTXVCo0LD0DqIHYlPh53NR5mcc_kLJ', this)">
+      <span class="pw-net">TON</span>
+      <span class="pw-addr">UQDnZCrLcqVKjKDzTBMTXVCo0LD0DqIHYlPh53NR5mcc_kLJ</span>
+      <span class="pw-copy">⧉</span>
+    </button>
+    <!-- USDT TRC-20 -->
+    <button class="pro-wallet" onclick="copyWallet('TN79X3tJr36kzFM9Q37rJNQ8KMsnuPhmUu', this)">
+      <span class="pw-net">USDT · TRC-20</span>
+      <span class="pw-addr">TN79X3tJr36kzFM9Q37rJNQ8KMsnuPhmUu</span>
+      <span class="pw-copy">⧉</span>
+    </button>
+
+    <div class="pro-note">📱 После оплаты отправьте скриншот чека менеджеру для мгновенной активации.</div>
+    <a class="pro-mgr-btn" href="https://t.me/akumediamgr" target="_blank" rel="noopener">Отправить чек менеджеру →</a>
+  </div>
+</div>
+
+<div class="modal-overlay" id="deleteReasonModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="modal-title">Укажите причину удаления вакансии</div>
+      <button class="modal-x" onclick="closeDeleteReason()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="delReasonJobTitle" class="del-job-title"></div>
+      <div class="del-reasons">
+        <button class="del-reason-btn" onclick="selectDelReason('found','Нашёл исполнителя')">✅ Нашёл исполнителя</button>
+        <button class="del-reason-btn" onclick="selectDelReason('not_actual','Не актуально')">⌛ Не актуально</button>
+        <button class="del-reason-btn" onclick="selectDelReason('other','Другая причина')">✏️ Другая причина</button>
+      </div>
+      <textarea id="delReasonOther" class="form-input" placeholder="Опишите причину..." style="display:none;margin-top:10px;min-height:70px;"></textarea>
+      <button class="btn-submit" id="delConfirmBtn" style="margin-top:14px;" onclick="confirmDeleteReason()">Подтвердить удаление</button>
+    </div>
   </div>
 </div>
 
@@ -1227,12 +1351,15 @@ function renderJobs(filter = 'all') {
           <div class="card-budget">${esc(bud)}</div>
           <div class="card-time">${timeAgo(j.created_at)}</div>
         </div>
-        ${isFreelancer && !isAdmin
-          ? `<button class="btn-apply" onclick="openApplyModal('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}',${isPremJob})">ОТКЛИКНУТЬСЯ</button>`
-          : isAdmin
-            ? `<button class="btn-apply" onclick="approveJob('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}')">✅ Одобрить</button>`
-            : `<span style="font-size:10px;color:var(--text3);">—</span>`
-        }
+        ${(() => {
+          const myId = String(CUR_USER?.telegram_id || '');
+          const isOwn = myId && String(j.author_telegram_id||'') === myId;
+          // Автор вакансии: только "Удалить вакансию", без "Откликнуться"
+          if (isOwn) return `<button class="btn-del-job" onclick="openDeleteReason('${j.id}','${esc(j.title)}')">🗑 Удалить вакансию</button>`;
+          if (isAdmin) return `<button class="btn-apply" onclick="approveJob('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}')">✅ Одобрить</button>`;
+          if (isFreelancer) return `<button class="btn-apply" onclick="openApplyModal('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}',${isPremJob})">ОТКЛИКНУТЬСЯ</button>`;
+          return `<span style="font-size:10px;color:var(--text3);">—</span>`;
+        })()}
       </div>
     </div>`;
   }).join('');
@@ -1457,6 +1584,41 @@ function setCur(btn) {
 //  ОПЛАТА PREMIUM (Telegram WebApp Payments)
 // ════════════════════════════════════════
 const PREMIUM_DAYS = 30;
+
+
+// ════ PRO ВКЛАДКА ════
+function openProTab(){
+  haptic('light');
+  document.getElementById('proTabModal').classList.add('show');
+}
+function closeProTab(){
+  document.getElementById('proTabModal').classList.remove('show');
+}
+// Копирование адреса кошелька в один клик
+function copyWallet(addr, btn){
+  const done = () => {
+    haptic('success');
+    const ic = btn.querySelector('.pw-copy');
+    const old = ic.textContent;
+    ic.textContent = '✓';
+    btn.style.borderColor = 'rgba(34,197,94,.5)';
+    showToast('📋 Адрес скопирован');
+    setTimeout(()=>{ ic.textContent = old; btn.style.borderColor = ''; }, 1600);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(addr).then(done).catch(()=>fallbackCopy(addr, done));
+  } else { fallbackCopy(addr, done); }
+}
+function fallbackCopy(text, cb){
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    cb && cb();
+  } catch(e){ showToast('Адрес: '+text); }
+}
+
 
 async function processPremiumPayment(){
   closeProModal();
@@ -1699,6 +1861,13 @@ async function handlePost() {
   const desc    = document.getElementById('fDesc').value.trim();
   const contact = document.getElementById('fContact').value.trim();
   const title   = document.getElementById('fTitle').value.trim();
+
+  // ── 1) ЗАЩИТА ОТ ДУБЛИРОВАНИЯ СЛОВ (флуд) ──
+  if (hasWordFlood(title) || hasWordFlood(desc)) {
+    showToast('Пожалуйста, не дублируйте слова в тексте', true);
+    haptic('error');
+    return;
+  }
 
   // ── 3А) ЛИМИТ ПУБЛИКАЦИЙ за 24ч (3 free / 10 premium) ──
   const isPrem  = !!CUR_USER?.is_premium;
@@ -1959,7 +2128,7 @@ async function loadMyJobs() {
           ${arch
             ? `<button class="btn-restore" onclick="restoreJob('${j.id}')">↻ Восстановить</button>`
             : `<button class="btn-arch" onclick="archiveJob('${j.id}')">✅ Нашёл исполнителя</button>`}
-          <button class="btn-del-own" onclick="deleteOwnJob('${j.id}')">
+          <button class="btn-del-own" onclick="openDeleteReason('${j.id}','${esc(j.title)}')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
           </button>
         </div>
@@ -1995,6 +2164,87 @@ async function deleteOwnJob(id) {
   if (error) { showToast('❌ Ошибка', true); return; }
   showToast('🗑 Удалено');
   loadMyJobs();
+}
+
+// ════════════════════════════════════════
+//  1. ВАЛИДАЦИЯ: дубли слов подряд (>2 раз)
+// ════════════════════════════════════════
+function hasWordFlood(text){
+  const words = String(text||'').toLowerCase()
+    .replace(/[.,!?;:()"'«»\-]+/g,' ')
+    .split(/\s+/).filter(Boolean);
+  let streak = 1;
+  for (let i = 1; i < words.length; i++){
+    if (words[i] === words[i-1]) {
+      streak++;
+      if (streak > 2) return true;   // одно слово 3+ раза подряд
+    } else {
+      streak = 1;
+    }
+  }
+  return false;
+}
+
+// ════════════════════════════════════════
+//  2/3. УДАЛЕНИЕ ВАКАНСИИ С ПРИЧИНОЙ
+// ════════════════════════════════════════
+let delJobId = null, delReasonKey = null, delReasonText = null;
+
+function openDeleteReason(jobId, jobTitle){
+  delJobId = jobId; delReasonKey = null; delReasonText = null;
+  document.getElementById('delReasonJobTitle').textContent = jobTitle || '';
+  document.getElementById('delReasonOther').style.display = 'none';
+  document.getElementById('delReasonOther').value = '';
+  document.querySelectorAll('.del-reason-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('deleteReasonModal').classList.add('show');
+  haptic('medium');
+}
+function closeDeleteReason(){
+  document.getElementById('deleteReasonModal').classList.remove('show');
+  delJobId = null;
+}
+function selectDelReason(key, text){
+  delReasonKey = key; delReasonText = text;
+  document.querySelectorAll('.del-reason-btn').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  // поле ввода только для "Другая причина"
+  document.getElementById('delReasonOther').style.display = key === 'other' ? 'block' : 'none';
+  haptic('light');
+}
+async function confirmDeleteReason(){
+  if (!delJobId) return;
+  if (!delReasonKey){ showToast('Выберите причину', true); return; }
+  let reasonText = delReasonText;
+  if (delReasonKey === 'other'){
+    const custom = document.getElementById('delReasonOther').value.trim();
+    if (!custom){ showToast('Опишите причину', true); return; }
+    reasonText = custom;
+  }
+  haptic('medium');
+  try {
+    // 1) Лог причины в Supabase
+    await db.from('vacancy_deletions').insert([{
+      job_id: delJobId,
+      author_telegram_id: String(CUR_USER?.telegram_id || ''),
+      reason_key: delReasonKey,
+      reason_text: reasonText,
+    }]);
+    // 2) Архивируем (убираем из активного поиска)
+    await db.from('jobs').update({ status: 'archived', deleted_reason: reasonText }).eq('id', delJobId);
+    closeDeleteReason();
+    showToast('✅ Вакансия удалена. Причина сохранена.');
+    loadJobs && loadJobs();
+    loadMyJobs && loadMyJobs();
+  } catch(e){
+    console.error('delete reason', e);
+    // фолбэк: если таблицы логов нет — просто архивируем
+    try {
+      await db.from('jobs').update({ status: 'archived' }).eq('id', delJobId);
+      closeDeleteReason();
+      showToast('✅ Вакансия удалена.');
+      loadJobs && loadJobs(); loadMyJobs && loadMyJobs();
+    } catch(e2){ showToast('❌ Ошибка удаления', true); }
+  }
 }
 
 // ════════════════════════════════════════
