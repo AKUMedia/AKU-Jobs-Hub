@@ -826,15 +826,6 @@ select.form-input option{background:var(--card);}
         <div class="role-saving-dot"></div><span>Сохраняем...</span>
       </div>
     </div>
-    <!-- Premium CTA -->
-    <div class="prof-section" id="profPremiumCta" style="display:none;">
-      <div class="prof-section-ttl">AKU Premium</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px;">
-        Безлимит откликов на любые вакансии, приоритет в ленте и доступ к закрытым B2B-заказам.
-      </div>
-      <button class="btn-pro-activate btn-pro-pulse" onclick="processPremiumPayment()">⭐ Активировать AKU Premium — 9$ / 650 ₽</button>
-    </div>
-
     <!-- My jobs -->
     <div class="prof-section">
       <div class="prof-section-ttl">Мои вакансии</div>
@@ -1388,7 +1379,6 @@ function renderJobs(filter = 'all') {
           </div>
           <div class="card-title">${esc(j.title)}</div>
         </div>
-        ${isAdmin ? `<button class="btn-del" onclick="deleteJob('${j.id}')" title="Удалить"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>` : ''}
       </div>
       ${j.description ? `<div class="card-desc">${esc(j.description)}</div>` : ''}
       <div class="card-bottom">
@@ -2173,9 +2163,6 @@ function renderProfile() {
     pp.textContent = 'Базовый тариф';
     pp.className = 'prof-premium is-free';
   }
-  // Premium-CTA: показываем только базовым пользователям
-  const cta = document.getElementById('profPremiumCta');
-  if (cta) cta.style.display = u.is_premium ? 'none' : '';
   document.getElementById('profUname').textContent = u.username ? '@' + u.username.replace(/^@/,'') : '';
   document.getElementById('profId').textContent = 'ID: ' + u.telegram_id;
   const img = document.getElementById('profAvaImg');
@@ -2442,15 +2429,25 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Русское склонение: plural(5,'минута','минуты','минут') → 'минут'
+function plural(n, one, few, many) {
+  const n10 = n % 10, n100 = n % 100;
+  if (n10 === 1 && n100 !== 11) return one;
+  if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return few;
+  return many;
+}
 function timeAgo(iso) {
   if (!iso) return '';
-  const d = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(d/60000), h = Math.floor(d/3600000), dy = Math.floor(d/86400000);
-  if (m < 2)  return 'только что';
-  if (m < 60) return m + ' мин. назад';
-  if (h < 24) return h + ' ч. назад';
-  if (dy < 7) return dy + ' дн. назад';
-  return new Date(iso).toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 0) return 'только что';
+  const min = Math.floor(diff / 60000);
+  const hr  = Math.floor(diff / 3600000);
+  const day = Math.floor(diff / 86400000);
+  if (min < 1)  return 'только что';
+  if (hr < 1)   return min + ' ' + plural(min, 'минуту', 'минуты', 'минут') + ' назад';   // N мин. назад
+  if (day < 1)  return hr + ' ' + plural(hr, 'час', 'часа', 'часов') + ' назад';           // 1 час / 2 часа / 5 часов назад
+  if (day < 30) return day + ' ' + plural(day, 'день', 'дня', 'дней') + ' назад';          // 1 день / 2 дня / 5 дней назад
+  return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 }
 
 let toastTimer;
@@ -2534,7 +2531,7 @@ function checkOnboarding() {
 // ════════════════════════════════════════
 //  5. WELCOME / ПОДПИСКА НА КАНАЛ
 // ════════════════════════════════════════
-const CHANNEL_USERNAME = 'akulichai';
+const CHANNEL_USERNAME = 'AKUJobsHub';
 function maybeShowWelcome(){
   let seen = false;
   try { seen = localStorage.getItem('welcome_seen') === 'true'; } catch(e){}
