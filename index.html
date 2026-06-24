@@ -393,6 +393,16 @@ select.form-input option{background:var(--card);}
   color:var(--text);text-align:center;transition:all .2s;}
 .btn-hub:hover{border-color:rgba(192,192,192,.5);box-shadow:0 0 14px rgba(192,192,192,.08);}
 .btn-hub:active{transform:scale(.99);}
+
+/* Рекламное место в AKU Hub */
+.hub-banner.hub-ad{border-style:dashed;border-color:rgba(255,255,255,.14);text-align:center;}
+.hub-banner.hub-ad::after{display:none;}
+.hub-banner.hub-ad:hover{box-shadow:var(--shadow);border-color:rgba(244,74,34,.4);}
+.hub-ad-icon{font-size:30px;margin-bottom:10px;filter:drop-shadow(0 0 10px rgba(244,74,34,.4));}
+.hub-ad-text{font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:14px;}
+.btn-hub.bh-ad{background:linear-gradient(135deg,#f44a22,#ff6a45);color:#fff;border:none;font-weight:700;}
+.btn-hub.bh-ad:hover{box-shadow:0 6px 20px rgba(244,74,34,.4);transform:translateY(-1px);}
+
 /* AKU Hub — индивидуальные бренд-акценты проектов */
 .hub-banner.hub-media{border-color:rgba(47,72,253,.32);}
 .hub-banner.hub-media::after{background:linear-gradient(135deg,rgba(47,72,253,.5),transparent 60%);}
@@ -874,6 +884,13 @@ select.form-input option{background:var(--card);}
       </div>
       <a class="btn-hub bh-auto" href="https://akuautomation.github.io/AKUAutomation/" target="_blank" rel="noopener" onclick="openExternalLink(event,'https://akuautomation.github.io/AKUAutomation/')">Узнать подробнее →</a>
     </div>
+
+    <!-- Рекламное место -->
+    <div class="hub-banner hub-ad">
+      <div class="hub-ad-icon">🎯</div>
+      <div class="hub-ad-text">Тут может быть ваша реклама в AKU Hub! По вопросам коммерческого размещения и сотрудничества пишите менеджеру.</div>
+      <a class="btn-hub bh-ad" href="https://t.me/akumediamgr" target="_blank" rel="noopener" onclick="openExternalLink(event,'https://t.me/akumediamgr')">Связаться</a>
+    </div>
   </div>
 
   <!-- ── АДМИН-ПАНЕЛЬ ── -->
@@ -894,6 +911,13 @@ select.form-input option{background:var(--card);}
         <button class="btn-submit" style="flex:1;" onclick="grantPremium()">Выдать Premium</button>
         <button class="adm-btn-revoke" onclick="revokePremium()">Забрать Premium</button>
       </div>
+    </div>
+
+    <!-- Секция бана -->
+    <div class="adm-card">
+      <div class="adm-card-ttl">🚫 Блокировка пользователя</div>
+      <input class="form-input" id="admBanId" type="text" placeholder="Telegram ID нарушителя" style="margin-bottom:10px;"/>
+      <button class="btn-submit" style="width:100%;background:linear-gradient(135deg,#ef4444,#dc2626);" onclick="banUserById()">Заблокировать по ID</button>
     </div>
 
     <!-- Секция модерации -->
@@ -1490,9 +1514,30 @@ document.getElementById('proLimitModal').addEventListener('click', function(e) {
   if (e.target === this) closeProModal();
 });
 
+// Запрещённые спам-слова для отклика
+const APPLY_BANNED_WORDS = ['казино','casino','1xbet','1хбет','ставки','букмекер','порно','эскорт','наркот','обнал','спам','реклама','пирамида'];
+// Проверка на ссылки/контакты/спам в тексте отклика
+function validateApplyText(text){
+  const t = (text || '').toLowerCase();
+  // Ссылки, мессенджеры, домены, сторонние юзернеймы
+  if (/https?:\/\//i.test(t) || /t\.me/i.test(t) || /www\./i.test(t)
+      || /@\w/i.test(t) || /\b[\w-]+\.(ru|com|net|org|io|me|info|biz|site|online)\b/i.test(t)) {
+    return false;
+  }
+  for (const w of APPLY_BANNED_WORDS){ if (t.includes(w)) return false; }
+  return true;
+}
+
 async function submitApply() {
   const letter = document.getElementById('coverLetter').value.trim();
   if (letter.length < 10 || isSendingApply) return;
+
+  // ── Жёсткая валидация: запрет ссылок, контактов и спама ──
+  if (!validateApplyText(letter)) {
+    notify('Проверка текста', 'В тексте отклика запрещено использовать ссылки и нецензурные выражения!');
+    haptic('error');
+    return;
+  }
 
   // ── 3Б) ЛИМИТ ОТКЛИКОВ за 24ч: free 25/день, premium безлимит ──
   const isAdminUser = CUR_USER?.is_admin === true;
@@ -2108,6 +2153,44 @@ async function revokePremium(){
   } catch(e){
     console.error('revokePremium', e);
     notify('Ошибка', 'Не удалось забрать Premium. Попробуйте снова.');
+  }
+}
+
+
+// ════════════════════════════════════════
+//  АДМИН: БАН ПОЛЬЗОВАТЕЛЯ ПО ID
+// ════════════════════════════════════════
+async function banUserById(){
+  if (!CUR_USER?.is_admin) return;
+  const raw = document.getElementById('admBanId').value.trim();
+  if (!raw){ notify('Внимание', 'Укажите Telegram ID пользователя'); return; }
+  if (!confirm(`Заблокировать пользователя ${raw}? Это перманентный бан.`)) return;
+  haptic('medium');
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/admin/ban`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        admin_id:  CUR_USER.telegram_id,
+        target_id: raw,
+        banned:    true
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      haptic('success');
+      showToast('🚫 Пользователь заблокирован');
+      document.getElementById('admBanId').value = '';
+    } else if (res.status === 403) {
+      notify('Нет доступа', 'Только администратор может банить пользователей.');
+    } else if (res.status === 404) {
+      notify('Не найдено', 'Пользователь с таким ID не найден.');
+    } else {
+      notify('Ошибка', data.message || 'Не удалось заблокировать. Проверьте, что бэкенд запущен.');
+    }
+  } catch(e) {
+    console.error('banUserById', e);
+    notify('Ошибка соединения', 'Не удалось связаться с сервером. Проверьте, что бэкенд доступен.');
   }
 }
 
