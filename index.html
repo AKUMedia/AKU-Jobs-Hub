@@ -235,10 +235,32 @@ a{text-decoration:none;color:inherit;}
 .pw-addr{flex:1;font-size:10.5px;color:var(--text2);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pw-copy{font-size:16px;color:var(--accent);flex-shrink:0;}
 .pro-note{font-size:11px;color:var(--text2);line-height:1.6;text-align:center;margin:14px 0;padding:11px;border-radius:11px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);}
+
+/* ════ WELCOME / ПОДПИСКА ════ */
+.welcome-overlay{position:fixed;inset:0;z-index:600;background:rgba(5,5,7,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  display:none;align-items:center;justify-content:center;padding:24px;animation:fadeIn .3s ease;}
+.welcome-overlay.show{display:flex;}
+.welcome-box{position:relative;width:100%;max-width:360px;background:linear-gradient(165deg,#16161a,#0d0d0f);
+  border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:32px 24px 24px;text-align:center;overflow:hidden;
+  box-shadow:0 24px 70px rgba(0,0,0,.6);animation:modalIn .4s cubic-bezier(.2,.8,.2,1);}
+.welcome-glow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:200px;height:200px;
+  background:radial-gradient(circle,rgba(244,74,34,.35),transparent 70%);pointer-events:none;}
+.welcome-emoji{font-size:48px;margin-bottom:14px;position:relative;filter:drop-shadow(0 0 16px rgba(244,74,34,.5));}
+.welcome-title{font-size:21px;font-weight:800;letter-spacing:-.4px;color:#fff;line-height:1.25;margin-bottom:10px;position:relative;}
+.welcome-sub{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:22px;position:relative;}
+.welcome-btn{position:relative;width:100%;padding:15px;border-radius:14px;font-size:15px;font-weight:800;letter-spacing:.02em;
+  color:#0D0D0D;background:linear-gradient(135deg,#f44a22,#ff6a45);border:none;cursor:pointer;
+  box-shadow:0 8px 28px rgba(244,74,34,.4);transition:transform .2s,filter .2s;animation:proPulse 2.4s ease-in-out infinite;}
+.welcome-btn:hover{filter:brightness(1.08);transform:translateY(-1px);animation:none;}
+.welcome-btn:active{transform:scale(.98);}
+.welcome-later{width:100%;margin-top:12px;padding:8px;background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;transition:color .2s;}
+.welcome-later:hover{color:var(--text2);}
+
 .pro-mgr-btn{display:block;text-align:center;padding:13px;border-radius:13px;text-decoration:none;font-weight:700;font-size:13px;color:#fff;
   background:linear-gradient(135deg,#f44a22,#ff6a45);box-shadow:0 4px 18px rgba(244,74,34,.3);transition:all .2s;}
 .pro-mgr-btn:active{transform:scale(.98);}
 
+.btn-approve{background:rgba(34,197,94,.1)!important;border-color:rgba(34,197,94,.4)!important;color:#22c55e!important;}
 .btn-apply{padding:8px 15px;border-radius:9px;font-size:11px;font-weight:700;letter-spacing:.04em;
   background:var(--card2);border:1px solid var(--border-hi);color:var(--text);
   transition:border-color .18s,box-shadow .18s;white-space:nowrap;position:relative;overflow:hidden;}
@@ -499,13 +521,24 @@ select.form-input option{background:var(--card);}
   position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
   z-index:200;display:flex;align-items:flex-end;justify-content:center;
   opacity:0;pointer-events:none;transition:opacity .25s;}
-.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-overlay.open,.modal-overlay.show{opacity:1;pointer-events:all;}
 .modal-sheet{
   width:100%;max-width:480px;background:var(--card);
   border-radius:20px 20px 0 0;padding:20px 16px 32px;
   border-top:1px solid var(--border);
   transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);}
-.modal-overlay.open .modal-sheet{transform:translateY(0);}
+.modal-overlay.open .modal-sheet,.modal-overlay.show .modal-sheet{transform:translateY(0);}
+/* PRO/Delete модалки: внутренний контейнер как modal-sheet */
+.modal-box,.modal-card{width:100%;max-width:480px;background:var(--card);border-radius:20px 20px 0 0;
+  padding:20px 16px 32px;border-top:1px solid var(--border);position:relative;
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:90vh;overflow-y:auto;}
+.modal-overlay.open .modal-box,.modal-overlay.show .modal-box,
+.modal-overlay.open .modal-card,.modal-overlay.show .modal-card{transform:translateY(0);}
+.modal-overlay{align-items:flex-end;}
+.modal-close,.modal-x{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:8px;
+  background:var(--card2);border:1px solid var(--border);color:var(--text2);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;z-index:2;}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px;}
 .modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border-hi);margin:0 auto 18px;}
 .modal-title{font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;}
 .modal-sub{font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.5;}
@@ -1070,6 +1103,18 @@ select.form-input option{background:var(--card);}
   </div>
 </div>
 
+<!-- ════ WELCOME / ПОДПИСКА НА КАНАЛ ════ -->
+<div class="welcome-overlay" id="welcomeModal">
+  <div class="welcome-box">
+    <div class="welcome-glow"></div>
+    <div class="welcome-emoji">🚀</div>
+    <div class="welcome-title">Добро пожаловать в<br>AKU Jobs Hub</div>
+    <div class="welcome-sub">Свежие вакансии, заказы и кейсы — первыми в нашем Telegram-канале. Подпишись, чтобы ничего не пропустить.</div>
+    <button class="welcome-btn" onclick="welcomeSubscribe()">Подписаться</button>
+    <button class="welcome-later" onclick="closeWelcome()">Может позже</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -1339,7 +1384,7 @@ function renderJobs(filter = 'all') {
         <div style="flex:1;min-width:0;">
           <div class="card-meta">
             <span class="badge">${cat}</span>
-            ${isPremJob ? '<span class="badge badge-prem">⭐ Premium</span>' : '<span class="badge badge-remote">Удалённо</span>'}
+            ${isPremJob ? '<span class="badge badge-prem">⭐ Premium</span>' : ''}
           </div>
           <div class="card-title">${esc(j.title)}</div>
         </div>
@@ -1354,9 +1399,15 @@ function renderJobs(filter = 'all') {
         ${(() => {
           const myId = String(CUR_USER?.telegram_id || '');
           const isOwn = myId && String(j.author_telegram_id||'') === myId;
-          // Автор вакансии: только "Удалить вакансию", без "Откликнуться"
+          const isApproved = j.status === 'active'; // уже одобрена/опубликована
+          // 2) Автор вакансии: только "Удалить вакансию", без "Откликнуться"
           if (isOwn) return `<button class="btn-del-job" onclick="openDeleteReason('${j.id}','${esc(j.title)}')">🗑 Удалить вакансию</button>`;
-          if (isAdmin) return `<button class="btn-apply" onclick="approveJob('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}')">✅ Одобрить</button>`;
+          // 1) Админ: пока НЕ одобрена — "Одобрить" (однократно); после одобрения — только "Удалить"
+          if (isAdmin) {
+            return isApproved
+              ? `<button class="btn-del-job" onclick="adminDeleteJob('${j.id}','${esc(j.title)}')">🗑 Удалить</button>`
+              : `<button class="btn-apply btn-approve" onclick="approveJob(this,'${j.id}','${esc(j.title)}','${j.author_telegram_id||''}')">✅ Одобрить</button>`;
+          }
           if (isFreelancer) return `<button class="btn-apply" onclick="openApplyModal('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}',${isPremJob})">ОТКЛИКНУТЬСЯ</button>`;
           return `<span style="font-size:10px;color:var(--text3);">—</span>`;
         })()}
@@ -1377,6 +1428,13 @@ function filterJobs(btn, f) {
 // ════════════════════════════════════════
 let modalJobIsPrem = false;
 function openApplyModal(jobId, jobTitle, authorTid, isPremJob) {
+  // 2) Жёсткий запрет: автор не может откликнуться на свою вакансию
+  const myId = String((window.Telegram?.WebApp?.initDataUnsafe?.user?.id) || CUR_USER?.telegram_id || '');
+  if (myId && String(authorTid||'') === myId) {
+    notify('Это ваша вакансия', 'Вы не можете откликнуться на собственную вакансию. Её можно только удалить.');
+    haptic('error');
+    return;
+  }
   // 3Б) Free не может откликаться на Premium-вакансии
   const isPrem = !!CUR_USER?.is_premium || CUR_USER?.is_admin === true;
   if (isPremJob && !isPrem) {
@@ -1428,6 +1486,15 @@ function openExternalLink(e, url) {
 // Close modals on overlay tap
 document.getElementById('applyModal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
+});
+['welcomeModal','proTabModal','deleteReasonModal','vacLimitModal'].forEach(id => {
+  const m = document.getElementById(id);
+  if (m) m.addEventListener('click', function(e){
+    if (e.target === this) {
+      if (id === 'welcomeModal') closeWelcome();
+      else this.classList.remove('open','show');
+    }
+  });
 });
 document.getElementById('proLimitModal').addEventListener('click', function(e) {
   if (e.target === this) closeProModal();
@@ -1509,19 +1576,54 @@ async function submitApply() {
 // ════════════════════════════════════════
 //  ADMIN — ОДОБРЕНИЕ ВАКАНСИИ (Сценарий Б)
 // ════════════════════════════════════════
-async function approveJob(jobId, jobTitle, authorTid) {
+async function approveJob(btn, jobId, jobTitle, authorTid) {
   haptic('medium');
-  const { error } = await db.from('jobs').update({ status: 'active' }).eq('id', jobId);
-  if (error) { showToast('❌ Ошибка одобрения', true); return; }
-  showToast('✅ Вакансия одобрена!');
-  if (authorTid) {
-    await sendBotNotification(
-      authorTid,
-      `✅ Ваша вакансия <b>${jobTitle}</b> успешно прошла модерацию и опубликована в ленте!\n\n` +
-      `👉 Откройте AKU Jobs Hub, чтобы просмотреть отклики.`
-    );
+  // Защита от двойного клика
+  if (btn) { if (btn.disabled) return; btn.disabled = true; btn.textContent = '...'; }
+  try {
+    // ОДНОКРАТНОЕ одобрение: меняем статус ТОЛЬКО если он ещё 'pending'.
+    // Повторный клик вернёт 0 строк → второго одобрения/уведомления не будет.
+    const { data, error } = await db.from('jobs')
+      .update({ status: 'active' })
+      .eq('id', jobId)
+      .eq('status', 'pending')
+      .select();
+    if (error) throw error;
+    if (!data || !data.length) {
+      showToast('Вакансия уже одобрена');
+      await loadJobs();
+      return;
+    }
+    showToast('✅ Вакансия одобрена!');
+    if (authorTid) {
+      await sendBotNotification(
+        authorTid,
+        `✅ Ваша вакансия <b>${jobTitle}</b> успешно прошла модерацию и опубликована в ленте!\n\n` +
+        `👉 Откройте AKU Jobs Hub, чтобы просмотреть отклики.`
+      );
+    }
+    await loadJobs(); // перерисует карточку → теперь там кнопка «Удалить»
+  } catch(e) {
+    console.error('approveJob', e);
+    showToast('❌ Ошибка одобрения', true);
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Одобрить'; }
   }
-  await loadJobs();
+}
+
+// Удаление вакансии админом из ленты (после одобрения)
+async function adminDeleteJob(jobId, jobTitle) {
+  if (!confirm(`Удалить вакансию «${jobTitle}»?`)) return;
+  haptic('medium');
+  try {
+    const { error } = await db.from('jobs').delete().eq('id', jobId);
+    if (error) throw error;
+    showToast('🗑 Вакансия удалена');
+    allJobs = allJobs.filter(j => j.id !== jobId);
+    renderJobs(activeFilter);
+  } catch(e) {
+    console.error('adminDeleteJob', e);
+    showToast('❌ Ошибка удаления', true);
+  }
 }
 
 // ════════════════════════════════════════
@@ -1970,13 +2072,21 @@ async function loadModeration(){
   }
 }
 async function modApprove(id){
+  const btn = document.querySelector(`#mod-${id} .adm-btn-ok`);
+  if (btn) { if (btn.disabled) return; btn.disabled = true; btn.textContent = '...'; }
   try {
-    const { error } = await db.from('jobs').update({ status:'active' }).eq('id', id);
+    // Однократно: только из 'pending'
+    const { data, error } = await db.from('jobs')
+      .update({ status:'active' }).eq('id', id).eq('status','pending').select();
     if (error) throw error;
-    haptic('success'); showToast('✅ Вакансия одобрена');
+    haptic('success');
+    showToast((data && data.length) ? '✅ Вакансия одобрена' : 'Уже одобрена');
     document.getElementById('mod-'+id)?.remove();
     loadModeration();
-  } catch(e){ showToast('❌ Ошибка одобрения', true); }
+  } catch(e){
+    showToast('❌ Ошибка одобрения', true);
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Одобрить'; }
+  }
 }
 async function modReject(id){
   try {
@@ -2420,6 +2530,37 @@ function checkOnboarding() {
   }
 }
 
+
+// ════════════════════════════════════════
+//  5. WELCOME / ПОДПИСКА НА КАНАЛ
+// ════════════════════════════════════════
+const CHANNEL_USERNAME = 'akulichai';
+function maybeShowWelcome(){
+  let seen = false;
+  try { seen = localStorage.getItem('welcome_seen') === 'true'; } catch(e){}
+  if (seen) return;
+  const m = document.getElementById('welcomeModal');
+  if (m) m.classList.add('show');
+}
+function markWelcomeSeen(){
+  try { localStorage.setItem('welcome_seen', 'true'); } catch(e){}
+}
+function closeWelcome(){
+  markWelcomeSeen();
+  const m = document.getElementById('welcomeModal');
+  if (m) m.classList.remove('show');
+  haptic('light');
+}
+function welcomeSubscribe(){
+  markWelcomeSeen();
+  haptic('success');
+  const url = 'https://t.me/' + CHANNEL_USERNAME;
+  if (TG && typeof TG.openTelegramLink === 'function') TG.openTelegramLink(url);
+  else window.open(url, '_blank');
+  const m = document.getElementById('welcomeModal');
+  if (m) m.classList.remove('show');
+}
+
 // ════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════
@@ -2433,6 +2574,7 @@ function checkOnboarding() {
   await initAuth();
   loadJobs();
   checkForm();
+  maybeShowWelcome();
 })();
 </script>
 </body>
