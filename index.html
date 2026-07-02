@@ -1908,26 +1908,27 @@ async function processPremiumPayment(){
   });
 }
 
-// Запись Premium в Supabase: is_premium=true, premium_until = now + 30 дней
+// После оплаты премиум активирует БЭКЕНД (successful_payment).
+// Фронт НЕ пишет is_premium сам (иначе любой мог бы выдать себе Premium
+// через консоль с anon-ключом). Здесь только ПЕРЕЧИТЫВАЕМ статус из БД.
 async function activatePremiumInDB(){
   try {
-    const until = new Date();
-    until.setDate(until.getDate() + PREMIUM_DAYS);
-    const untilIso = until.toISOString();
+    // Даём бэкенду мгновение обработать successful_payment, затем читаем актуальный статус
+    let fresh = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await new Promise(r => setTimeout(r, attempt === 0 ? 400 : 900));
+      const field = CUR_USER?.id ? 'id' : 'telegram_id';
+      const value = CUR_USER?.id || CUR_USER?.telegram_id;
+      const { data } = await db.from('users')
+        .select('is_premium, is_pro, premium_until').eq(field, value).maybeSingle();
+      if (data && (data.is_premium || data.is_pro)) { fresh = data; break; }
+    }
+    if (!fresh) throw new Error('premium not yet active');
 
-    // Находим пользователя по UUID (если есть) или telegram_id
-    const field = CUR_USER?.id ? 'id' : 'telegram_id';
-    const value = CUR_USER?.id || CUR_USER?.telegram_id;
-
-    const { error } = await db.from('users')
-      .update({ is_premium: true, premium_until: untilIso })
-      .eq(field, value);
-    if (error) throw error;
-
-    // Мгновенно обновляем локальное состояние + интерфейс
-    CUR_USER.is_premium   = true;
-    CUR_USER.is_pro       = true;
-    CUR_USER.premium_until = untilIso;
+    // Обновляем локальное состояние из ПОДТВЕРЖДЁННЫХ бэкендом данных
+    CUR_USER.is_premium    = !!fresh.is_premium;
+    CUR_USER.is_pro        = !!(fresh.is_pro || fresh.is_premium);
+    CUR_USER.premium_until = fresh.premium_until;
     renderProfile();        // загорается ⭐
     loadJobs && loadJobs(); // премиум-доступ к ленте
 
