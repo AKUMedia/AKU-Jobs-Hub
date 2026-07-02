@@ -1144,7 +1144,7 @@ const BOT_TOKEN   = '8887029200:AAELHZa7jTuP3LHj-pNrDMUtrZdheRMC9S0';
 // Бэкенд: локально → :3000, в проде → твой публичный URL (ngrok / Render / VPS)
 const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:3000'
-  : 'https://ТВОЙ_NGROK_ИЛИ_ПРОД_URL';  // 🔧 ЗАМЕНИ на публичный URL бэкенда
+  : 'https://binibit.com/?i=mzvel4';  // 🔧 ЗАМЕНИ на публичный URL бэкенда
 
 // Тарифы (Stars)
 const TARIFFS = {
@@ -1492,6 +1492,7 @@ function activatePro() {
 //  ДИНАМИЧЕСКАЯ РЕКЛАМА В AKU HUB
 // ════════════════════════════════════════
 let AD_URL = null; // текущая ссылка объявления
+let AD_ID  = null; // id объявления (для статистики кликов)
 
 async function loadAd(){
   const banner = document.getElementById('ad-link');
@@ -1519,6 +1520,7 @@ async function loadAd(){
     if (btnEl)  btnEl.textContent  = ad.button_text || ad.btn || 'Перейти';
 
     AD_URL = String(ad.url);
+    AD_ID  = ad.id || null;               // для трекинга кликов
     banner.setAttribute('href', AD_URL);
     banner.style.display = '';
   } catch(e){
@@ -1535,6 +1537,16 @@ function openAd(e){
   if (e) e.preventDefault();
   if (!AD_URL) return;
   haptic('light');
+  // Трекинг клика (защищён проверкой initData на бэкенде)
+  if (AD_ID) {
+    fetch(`${BACKEND_URL}/api/ads/click/${AD_ID}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': (window.Telegram?.WebApp?.initData || '')
+      }
+    }).catch(() => {});   // не блокируем открытие, если трекинг упал
+  }
   if (TG && typeof TG.openLink === 'function') TG.openLink(AD_URL);
   else window.open(AD_URL, '_blank');
 }
