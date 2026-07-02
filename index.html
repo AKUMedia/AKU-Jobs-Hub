@@ -395,12 +395,13 @@ select.form-input option{background:var(--card);}
 .btn-hub:active{transform:scale(.99);}
 
 /* Рекламное место в AKU Hub */
-.hub-banner.hub-ad{border-style:dashed;border-color:rgba(255,255,255,.14);text-align:center;}
+.hub-banner.hub-ad{display:flex;flex-direction:column;align-items:center;border-style:dashed;border-color:rgba(255,255,255,.14);text-align:center;cursor:pointer;text-decoration:none;}
+.hub-banner.hub-ad.is-loading{opacity:.6;pointer-events:none;}
 .hub-banner.hub-ad::after{display:none;}
 .hub-banner.hub-ad:hover{box-shadow:var(--shadow);border-color:rgba(244,74,34,.4);}
 .hub-ad-icon{font-size:30px;margin-bottom:10px;filter:drop-shadow(0 0 10px rgba(244,74,34,.4));}
 .hub-ad-text{font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:14px;}
-.btn-hub.bh-ad{background:linear-gradient(135deg,#f44a22,#ff6a45);color:#fff;border:none;font-weight:700;}
+.btn-hub.bh-ad{display:inline-block;width:auto;padding:11px 26px;background:linear-gradient(135deg,#f44a22,#ff6a45);color:#fff;border:none;font-weight:700;}
 .btn-hub.bh-ad:hover{box-shadow:0 6px 20px rgba(244,74,34,.4);transform:translateY(-1px);}
 
 /* AKU Hub — индивидуальные бренд-акценты проектов */
@@ -886,11 +887,11 @@ select.form-input option{background:var(--card);}
     </div>
 
     <!-- Рекламное место -->
-    <div class="hub-banner hub-ad">
-      <div class="hub-ad-icon">🎯</div>
-      <div class="hub-ad-text">Тут может быть ваша реклама в AKU Hub! По вопросам коммерческого размещения и сотрудничества пишите менеджеру.</div>
-      <a class="btn-hub bh-ad" href="https://t.me/akumediamgr" target="_blank" rel="noopener" onclick="openExternalLink(event,'https://t.me/akumediamgr')">Связаться</a>
-    </div>
+    <a id="ad-link" class="hub-banner hub-ad" href="#" target="_blank" rel="noopener" onclick="openAd(event)">
+      <div id="ad-icon" class="hub-ad-icon">🔗</div>
+      <div id="ad-text" class="hub-ad-text">Загрузка рекламы...</div>
+      <span id="ad-btn-text" class="btn-hub bh-ad">Перейти</span>
+    </a>
   </div>
 
   <!-- ── АДМИН-ПАНЕЛЬ ── -->
@@ -1484,6 +1485,58 @@ function closeProModal() {
 // activatePro теперь через initPayment (Telegram Stars)
 function activatePro() {
   initPayment('pro_30d');
+}
+
+
+// ════════════════════════════════════════
+//  ДИНАМИЧЕСКАЯ РЕКЛАМА В AKU HUB
+// ════════════════════════════════════════
+let AD_URL = null; // текущая ссылка объявления
+
+async function loadAd(){
+  const banner = document.getElementById('ad-link');
+  if (!banner) return;
+  banner.classList.add('is-loading');
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/ads/current`, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const ad = await res.json().catch(() => null);
+
+    // Нет рекламы → скрываем баннер
+    if (!ad || !ad.url || ad.active === false) {
+      banner.style.display = 'none';
+      return;
+    }
+
+    // Безопасная подстановка (textContent, не innerHTML)
+    const iconEl = document.getElementById('ad-icon');
+    const textEl = document.getElementById('ad-text');
+    const btnEl  = document.getElementById('ad-btn-text');
+    if (iconEl) iconEl.textContent = ad.icon || '🔗';
+    if (textEl) textEl.textContent = ad.text || 'Реклама';
+    if (btnEl)  btnEl.textContent  = ad.button_text || ad.btn || 'Перейти';
+
+    AD_URL = String(ad.url);
+    banner.setAttribute('href', AD_URL);
+    banner.style.display = '';
+  } catch(e){
+    console.warn('loadAd:', e.message);
+    // При ошибке — не показываем пустой/битый баннер
+    banner.style.display = 'none';
+  } finally {
+    banner.classList.remove('is-loading');
+  }
+}
+
+// Клик по рекламе → открываем ссылку нативно в Telegram
+function openAd(e){
+  if (e) e.preventDefault();
+  if (!AD_URL) return;
+  haptic('light');
+  if (TG && typeof TG.openLink === 'function') TG.openLink(AD_URL);
+  else window.open(AD_URL, '_blank');
 }
 
 // Открыть внешнюю ссылку через Telegram WebApp API
@@ -2654,6 +2707,7 @@ function welcomeSubscribe(){
   await initAuth();
   loadJobs();
   checkForm();
+  loadAd();
   maybeShowWelcome();
 })();
 </script>
