@@ -1172,7 +1172,7 @@ const BOT_TOKEN   = '8887029200:AAELHZa7jTuP3LHj-pNrDMUtrZdheRMC9S0';
 // Бэкенд: локально → :3000, в проде → твой публичный URL (ngrok / Render / VPS)
 const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
   ? 'http://localhost:3000'
-  : 'https://binibit.com/?i=mzvel4';  // 🔧 ЗАМЕНИ на публичный URL бэкенда
+  : '';  // 🔧 УКАЖИ публичный URL бэкенда (Render/Railway/VPS). Реклама грузится напрямую из Supabase и без него.
 
 // Тарифы (Stars)
 const TARIFFS = {
