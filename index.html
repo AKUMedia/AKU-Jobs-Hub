@@ -1499,14 +1499,18 @@ async function loadAd(){
   if (!banner) return;
   banner.classList.add('is-loading');
   try {
-    const res = await fetch(`${BACKEND_URL}/api/ads/current`, {
-      headers: { 'Content-Type': 'application/json' }
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const ad = await res.json().catch(() => null);
+    // Прямой запрос в Supabase: самое свежее активное объявление
+    const { data: ad, error } = await db
+      .from('advertisements')
+      .select('id, title, text, icon, btn_text, target_url')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
 
     // Нет рекламы → скрываем баннер
-    if (!ad || !ad.url || ad.active === false) {
+    if (!ad || !ad.target_url) {
       banner.style.display = 'none';
       return;
     }
@@ -1517,38 +1521,35 @@ async function loadAd(){
     const btnEl  = document.getElementById('ad-btn-text');
     if (iconEl) iconEl.textContent = ad.icon || '🔗';
     if (textEl) textEl.textContent = ad.text || 'Реклама';
-    if (btnEl)  btnEl.textContent  = ad.button_text || ad.btn || 'Перейти';
+    if (btnEl)  btnEl.textContent  = ad.btn_text || 'Перейти';
 
-    AD_URL = String(ad.url);
-    AD_ID  = ad.id || null;               // для трекинга кликов
+    AD_URL = String(ad.target_url);
+    AD_ID  = ad.id || null;               // для счётчика кликов
     banner.setAttribute('href', AD_URL);
     banner.style.display = '';
   } catch(e){
     console.warn('loadAd:', e.message);
-    // При ошибке — не показываем пустой/битый баннер
-    banner.style.display = 'none';
+    banner.style.display = 'none';  // при ошибке не показываем битый баннер
   } finally {
     banner.classList.remove('is-loading');
   }
 }
 
 // Клик по рекламе → открываем ссылку нативно в Telegram
-function openAd(e){
+async function openAd(e){
   if (e) e.preventDefault();
   if (!AD_URL) return;
   haptic('light');
-  // Трекинг клика (защищён проверкой initData на бэкенде)
-  if (AD_ID) {
-    fetch(`${BACKEND_URL}/api/ads/click/${AD_ID}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Telegram-Init-Data': (window.Telegram?.WebApp?.initData || '')
-      }
-    }).catch(() => {});   // не блокируем открытие, если трекинг упал
+  try {
+    // Атомарный инкремент счётчика кликов в Supabase
+    if (AD_ID) await db.rpc('increment_ad_clicks', { ad_id: AD_ID });
+  } catch(err){
+    console.warn('increment_ad_clicks:', err.message);  // не мешаем переходу
+  } finally {
+    // Открываем ссылку (в Telegram — нативно)
+    if (TG && typeof TG.openLink === 'function') TG.openLink(AD_URL);
+    else window.open(AD_URL, '_blank');
   }
-  if (TG && typeof TG.openLink === 'function') TG.openLink(AD_URL);
-  else window.open(AD_URL, '_blank');
 }
 
 // Открыть внешнюю ссылку через Telegram WebApp API
