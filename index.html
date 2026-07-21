@@ -168,6 +168,17 @@ a{text-decoration:none;color:inherit;}
 /* Premium-вакансии */
 .card.card-premium{border-color:rgba(244,74,34,.45);box-shadow:0 0 0 1px rgba(244,74,34,.15),0 4px 18px rgba(244,74,34,.1);}
 .card.card-premium:hover{border-color:rgba(244,74,34,.7);box-shadow:0 0 0 1px rgba(244,74,34,.3),0 8px 26px rgba(244,74,34,.16);}
+.card-clickable{cursor:pointer;}
+.card-clickable:active{transform:scale(.995);}
+.jd-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.jd-title{font-size:20px;font-weight:800;line-height:1.3;margin-bottom:10px;color:var(--text);}
+.jd-budget{display:inline-block;font-size:16px;font-weight:800;color:var(--accent,#f44a22);margin-bottom:18px;}
+.jd-sec-label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+.jd-desc{font-size:14px;line-height:1.7;color:var(--text2);white-space:pre-wrap;word-break:break-word;
+  background:var(--bg2,#161619);border:1px solid var(--border,#26262b);border-radius:12px;padding:14px;margin-bottom:14px;
+  max-height:300px;overflow-y:auto;}
+.jd-time{font-size:11px;color:var(--text3);margin-bottom:16px;}
+#jdActionWrap .btn-send,#jdActionWrap .btn-apply{width:100%;}
 .badge-prem{border-color:rgba(244,74,34,.5);color:#f44a22;background:rgba(244,74,34,.1);font-weight:800;}
 /* АДМИН-ПАНЕЛЬ */
 .adm-card{background:rgba(255,255,255,.03);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px;margin-bottom:13px;}
@@ -1016,6 +1027,23 @@ select.form-input option{background:var(--card);}
 </div><!-- /app -->
 
 <!-- ════ MODAL ОТКЛИК ════ -->
+<!-- ════ JOB DETAIL MODAL ════ -->
+<div class="modal-overlay" id="jobDetailModal">
+  <div class="modal-sheet" style="position:relative;">
+    <div class="modal-handle"></div>
+    <button class="btn-modal-close" onclick="closeJobDetail()">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="jd-meta" id="jdMeta"></div>
+    <div class="jd-title" id="jdTitle">...</div>
+    <div class="jd-budget" id="jdBudget"></div>
+    <div class="jd-sec-label">Полное описание</div>
+    <div class="jd-desc" id="jdDesc"></div>
+    <div class="jd-time" id="jdTime"></div>
+    <div id="jdActionWrap"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="applyModal">
   <div class="modal-sheet" style="position:relative;">
     <div class="modal-handle"></div>
@@ -1454,7 +1482,7 @@ function renderJobs(filter = 'all') {
     const bud = formatPrice(j);
     const isPremJob = j.is_premium_job === true;
     return `
-    <div class="card${isPremJob ? ' card-premium' : ''}" style="animation-delay:${i*35}ms;">
+    <div class="card card-clickable${isPremJob ? ' card-premium' : ''}" style="animation-delay:${i*35}ms;" onclick="openJobDetail('${j.id}')">
       <div class="card-top">
         <div style="flex:1;min-width:0;">
           <div class="card-meta">
@@ -1475,18 +1503,18 @@ function renderJobs(filter = 'all') {
           const isOwn = myId && String(j.author_telegram_id||'') === myId;
           const isApproved = j.status === 'active'; // уже одобрена/опубликована
           // 2) Автор вакансии: только "Удалить вакансию", без "Откликнуться"
-          if (isOwn) return `<button class="btn-del-job" onclick="openDeleteReason('${j.id}','${esc(j.title)}')">🗑 Удалить вакансию</button>`;
+          if (isOwn) return `<button class="btn-del-job" onclick="event.stopPropagation();openDeleteReason('${j.id}','${esc(j.title)}')">🗑 Удалить вакансию</button>`;
           // 1) Админ: пока НЕ одобрена — "Одобрить" (однократно); после одобрения — только "Удалить"
           if (isAdmin) {
             return isApproved
-              ? `<button class="btn-del-job" onclick="adminDeleteJob('${j.id}','${esc(j.title)}')">🗑 Удалить</button>`
-              : `<button class="btn-apply btn-approve" onclick="approveJob(this,'${j.id}','${esc(j.title)}','${j.author_telegram_id||''}')">✅ Одобрить</button>`;
+              ? `<button class="btn-del-job" onclick="event.stopPropagation();adminDeleteJob('${j.id}','${esc(j.title)}')">🗑 Удалить</button>`
+              : `<button class="btn-apply btn-approve" onclick="event.stopPropagation();approveJob(this,'${j.id}','${esc(j.title)}','${j.author_telegram_id||''}')">✅ Одобрить</button>`;
           }
           if (isFreelancer) {
             if (MY_APPLIED_JOBS.has(String(j.id))) {
-              return `<button class="btn-apply applied" disabled>✅ Отклик отправлен</button>`;
+              return `<button class="btn-apply applied" disabled onclick="event.stopPropagation()">✅ Отклик отправлен</button>`;
             }
-            return `<button class="btn-apply" onclick="openApplyModal('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}',${isPremJob})">ОТКЛИКНУТЬСЯ</button>`;
+            return `<button class="btn-apply" onclick="event.stopPropagation();openApplyModal('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}',${isPremJob})">ОТКЛИКНУТЬСЯ</button>`;
           }
           return `<span style="font-size:10px;color:var(--text3);">—</span>`;
         })()}
@@ -1506,6 +1534,43 @@ function filterJobs(btn, f) {
 //  APPLY MODAL
 // ════════════════════════════════════════
 let modalJobIsPrem = false;
+
+// ════ ДЕТАЛИ ВАКАНСИИ (клик по карточке) ════
+function openJobDetail(jobId){
+  const j = (allJobs || []).find(x => String(x.id) === String(jobId));
+  if (!j) return;
+  haptic && haptic('light');
+  const cat = j.category || '📋 Прочее';
+  const isPrem = j.is_premium_job === true;
+  document.getElementById('jdMeta').innerHTML =
+    `<span class="badge">${cat}</span>` + (isPrem ? '<span class="badge badge-prem">⭐ Premium</span>' : '');
+  document.getElementById('jdTitle').textContent = j.title || 'Без названия';
+  const bud = (typeof formatPrice==='function') ? formatPrice(j) : '';
+  document.getElementById('jdBudget').textContent = bud || '';
+  document.getElementById('jdDesc').textContent = j.description || 'Описание не указано.';
+  document.getElementById('jdTime').textContent = (typeof timeAgo==='function') ? timeAgo(j.created_at) : '';
+
+  const wrap = document.getElementById('jdActionWrap');
+  const myId = String(CUR_USER?.telegram_id || '');
+  const isOwn = myId && String(j.author_telegram_id || '') === myId;
+  const isFreelancer = !CUR_USER || CUR_USER.role === 'freelancer' || CUR_USER.role === 'admin';
+  if (isOwn) {
+    wrap.innerHTML = '';
+  } else if (isFreelancer) {
+    if (MY_APPLIED_JOBS && MY_APPLIED_JOBS.has(String(j.id))) {
+      wrap.innerHTML = '<button class="btn-send" disabled style="opacity:.6;">✅ Отклик отправлен</button>';
+    } else {
+      wrap.innerHTML = `<button class="btn-send" onclick="closeJobDetail();openApplyModal('${j.id}','${(j.title||'').replace(/'/g,'')}','${j.author_telegram_id||''}',${isPrem})">ОТКЛИКНУТЬСЯ</button>`;
+    }
+  } else {
+    wrap.innerHTML = '';
+  }
+  document.getElementById('jobDetailModal').classList.add('show');
+}
+function closeJobDetail(){
+  document.getElementById('jobDetailModal').classList.remove('show');
+}
+
 function openApplyModal(jobId, jobTitle, authorTid, isPremJob) {
   // 2) Жёсткий запрет: автор не может откликнуться на свою вакансию
   const myId = String((window.Telegram?.WebApp?.initDataUnsafe?.user?.id) || CUR_USER?.telegram_id || '');
@@ -1634,7 +1699,7 @@ function openExternalLink(e, url) {
 document.getElementById('applyModal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
-['welcomeModal','proTabModal','deleteReasonModal','vacLimitModal'].forEach(id => {
+['welcomeModal','proTabModal','deleteReasonModal','vacLimitModal','jobDetailModal'].forEach(id => {
   const m = document.getElementById(id);
   if (m) m.addEventListener('click', function(e){
     if (e.target === this) {
@@ -1792,13 +1857,6 @@ async function approveJob(btn, jobId, jobTitle, authorTid) {
         `👉 Откройте AKU Jobs Hub, чтобы просмотреть отклики.`
       );
     }
-    // Рассылка подписчикам о новой вакансии (через бэкенд, батчами)
-    try {
-      await fetch(`${BACKEND_URL}/api/notify-job`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ admin_id: CUR_USER?.telegram_id, job_id: jobId })
-      });
-    } catch(e) { console.warn('notify-job', e); }
     await loadJobs(); // перерисует карточку → теперь там кнопка «Удалить»
   } catch(e) {
     console.error('approveJob', e);
