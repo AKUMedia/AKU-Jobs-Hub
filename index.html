@@ -872,6 +872,11 @@ select.form-input option{background:var(--card);}
       <div class="prof-section-ttl">Мои вакансии</div>
       <div id="myJobsList"><div class="empty-box" style="border:none;padding:16px 0;"><div class="empty-sub">Нет активных объявлений</div></div></div>
     </div>
+    <!-- Мои отклики (куда я откликнулся) -->
+    <div class="prof-section">
+      <div class="prof-section-ttl">Мои отклики</div>
+      <div id="mySentAppsList"><div class="empty-box" style="border:none;padding:16px 0;"><div class="empty-sub">Вы ещё никуда не откликались</div></div></div>
+    </div>
     <!-- Отклики на мои вакансии -->
     <div class="prof-section">
       <div class="prof-section-ttl">Отклики на мои вакансии</div>
@@ -1387,7 +1392,7 @@ function switchTab(name, btn) {
   document.getElementById('pg-' + name).scrollTop = 0;
   haptic('light');
   if (name === 'feed')    loadJobs();
-  if (name === 'profile') { renderProfile(); loadMyJobs(); loadMyApps(); }
+  if (name === 'profile') { renderProfile(); loadMyJobs(); loadMySentApps(); loadMyApps(); }
   if (name === 'admin')   { loadModeration(); }
   updateMainButton();
 }
@@ -1395,6 +1400,7 @@ function switchTab(name, btn) {
 // ════════════════════════════════════════
 //  JOBS — LOAD & RENDER
 // ════════════════════════════════════════
+let MY_APPLIED_JOBS = new Set();
 async function loadJobs() {
   renderSkeleton();
   try {
@@ -1402,6 +1408,14 @@ async function loadJobs() {
       .eq('status', 'active').order('created_at', { ascending: false });
     if (error) throw error;
     allJobs = data || [];
+    // Подтягиваем мои отклики, чтобы пометить уже отправленные
+    try {
+      if (CUR_USER?.telegram_id) {
+        const { data: myApps } = await db.from('applications').select('job_id')
+          .eq('applicant_telegram_id', CUR_USER.telegram_id);
+        MY_APPLIED_JOBS = new Set((myApps || []).map(a => String(a.job_id)));
+      }
+    } catch(e) { /* не критично */ }
     renderJobs(activeFilter);
   } catch(e) {
     console.error(e);
@@ -1468,7 +1482,12 @@ function renderJobs(filter = 'all') {
               ? `<button class="btn-del-job" onclick="adminDeleteJob('${j.id}','${esc(j.title)}')">🗑 Удалить</button>`
               : `<button class="btn-apply btn-approve" onclick="approveJob(this,'${j.id}','${esc(j.title)}','${j.author_telegram_id||''}')">✅ Одобрить</button>`;
           }
-          if (isFreelancer) return `<button class="btn-apply" onclick="openApplyModal('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}',${isPremJob})">ОТКЛИКНУТЬСЯ</button>`;
+          if (isFreelancer) {
+            if (MY_APPLIED_JOBS.has(String(j.id))) {
+              return `<button class="btn-apply applied" disabled>✅ Отклик отправлен</button>`;
+            }
+            return `<button class="btn-apply" onclick="openApplyModal('${j.id}','${esc(j.title)}','${j.author_telegram_id||''}',${isPremJob})">ОТКЛИКНУТЬСЯ</button>`;
+          }
           return `<span style="font-size:10px;color:var(--text3);">—</span>`;
         })()}
       </div>
@@ -1679,8 +1698,27 @@ async function submitApply() {
   };
 
   try {
-    const { error } = await db.from('applications').insert([payload]);
+    // ── Защита от повторного отклика на одну вакансию ──
+    const { data: dup } = await db.from('applications').select('id')
+      .eq('job_id', modalJobId)
+      .eq('applicant_telegram_id', CUR_USER?.telegram_id)
+      .limit(1);
+    if (dup && dup.length) {
+      isSendingApply = false;
+      btn.classList.remove('loading'); btn.textContent = 'ОТПРАВИТЬ ОТКЛИК';
+      notify('Уже откликнулись', 'Вы уже отправляли отклик на эту вакансию.');
+      haptic('error');
+      closeModal();
+      // помечаем кнопку как использованную
+      const ab = document.querySelector(`button[onclick*="'${modalJobId}'"].btn-apply`);
+      if (ab) { ab.textContent = '✅ Отклик отправлен'; ab.classList.add('applied'); ab.disabled = true; }
+      return;
+    }
+
+    // .select() заставляет Supabase вернуть вставленную строку — так мы точно знаем, что запись прошла
+    const { data: inserted, error } = await db.from('applications').insert([payload]).select();
     if (error) throw error;
+    if (!inserted || !inserted.length) throw new Error('Отклик не сохранился, попробуйте ещё раз');
 
     haptic('success');
     closeModal();
@@ -1694,6 +1732,9 @@ async function submitApply() {
     }
 
     showToast('✅ Отклик отправлен!');
+
+    // Запоминаем, что уже откликнулись на эту вакансию
+    MY_APPLIED_JOBS.add(String(modalJobId));
 
     // Инкрементируем использованные отклики
     freeResponsesUsed++;
@@ -2576,6 +2617,46 @@ async function confirmDeleteReason(){
 // ════════════════════════════════════════
 //  ОТКЛИКИ НА МОИ ВАКАНСИИ
 // ════════════════════════════════════════
+async function loadMySentApps() {
+  if (!CUR_USER) return;
+  const el = document.getElementById('mySentAppsList');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:10px 0;color:var(--text3);font-size:12px;">Загрузка...</div>';
+  try {
+    // Мои отклики — где applicant = я
+    const { data: apps, error } = await db.from('applications').select('*')
+      .eq('applicant_telegram_id', CUR_USER.telegram_id)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    if (!apps || !apps.length) {
+      el.innerHTML = '<div class="empty-box" style="border:none;padding:14px 0;"><div class="empty-sub">Вы ещё никуда не откликались</div></div>';
+      return;
+    }
+
+    // Подтянем названия вакансий
+    const jobIds = [...new Set(apps.map(a => a.job_id).filter(Boolean))];
+    let jobMap = {};
+    if (jobIds.length) {
+      const { data: jobs } = await db.from('jobs').select('id,title').in('id', jobIds);
+      if (jobs) jobs.forEach(j => { jobMap[j.id] = j.title; });
+    }
+
+    el.innerHTML = apps.map(a => {
+      const jobTitle = jobMap[a.job_id] || 'Вакансия удалена';
+      const letter = a.cover_letter || '—';
+      return `
+      <div class="app-card">
+        <div class="app-job-title">📌 ${esc(jobTitle)}</div>
+        <div class="app-letter">${esc(letter)}</div>
+        <div class="app-time">Отправлено ${timeAgo(a.created_at)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:10px 0;">Ошибка загрузки</div>';
+  }
+}
+
 async function loadMyApps() {
   if (!CUR_USER) return;
   const el = document.getElementById('myAppsList');
