@@ -699,6 +699,10 @@ select.form-input option{background:var(--card);}
 .jd-footer{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
 .jd-time{font-size:11px;color:var(--text3);}
 #jdActionWrap .btn-apply,#jdActionWrap .btn-send{width:100%;padding:14px;font-size:14px;}
+.feed-section-label{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text3);margin:16px 4px 10px;display:flex;align-items:center;gap:8px;}
+.feed-section-label:first-child{margin-top:4px;}
+.badge-pin{background:rgba(244,74,34,.16);color:var(--accent);border:1px solid rgba(244,74,34,.35);}
 </style>
 </head>
 <body>
@@ -1467,21 +1471,45 @@ function renderSkeleton(n=4) {
     </div>`).join('');
 }
 
+// Активен ли Premium-закреп (24ч с момента одобрения)
+function isPinnedPremium(j) {
+  if (j.is_premium_job !== true) return false;
+  const ts = j.approved_at || j.created_at;
+  if (!ts) return false;
+  const elapsed = Date.now() - new Date(ts).getTime();
+  return elapsed >= 0 && elapsed < 24 * 3600 * 1000;
+}
+// Сколько осталось до конца закрепа (строкой)
+function pinnedLeft(j) {
+  const ts = j.approved_at || j.created_at;
+  const left = 24 * 3600 * 1000 - (Date.now() - new Date(ts).getTime());
+  if (left <= 0) return '';
+  const hrs = Math.floor(left / 3600000);
+  const mins = Math.floor((left % 3600000) / 60000);
+  return hrs > 0 ? `ещё ${hrs} ч` : `ещё ${mins} мин`;
+}
+
 function renderJobs(filter = 'all') {
   activeFilter = filter;
   const el = document.getElementById('jobsList');
   const base = filter === 'all' ? allJobs : allJobs.filter(j => CAT_KEY[j.category] === filter);
-  const list = [...base];
 
-  if (!list.length) {
+  if (!base.length) {
     el.innerHTML = '<div class="empty-box"><div class="empty-ico">📭</div><div class="empty-ttl">Пока нет вакансий</div><div class="empty-sub">Станьте первым — разместите задачу во вкладке «Разместить»</div></div>';
     return;
   }
 
+  // Разделяем: закреплённые premium (сверху) и обычные
+  const pinned = base.filter(isPinnedPremium)
+    .sort((a,b) => new Date(b.approved_at||b.created_at) - new Date(a.approved_at||a.created_at));
+  const regular = base.filter(j => !isPinnedPremium(j))
+    .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
   const isAdmin    = CUR_USER?.role === 'admin';
   const isFreelancer = !CUR_USER || CUR_USER.role === 'freelancer' || CUR_USER.role === 'admin';
 
-  el.innerHTML = list.map((j, i) => {
+  // Рендер одной карточки (вынесен, чтобы использовать для обеих групп)
+  const renderCard = (j, i) => {
     const cat = j.category || '📋 Прочее';
     const bud = formatPrice(j);
     const isPremJob = j.is_premium_job === true;
@@ -1524,7 +1552,30 @@ function renderJobs(filter = 'all') {
         })()}
       </div>
     </div>`;
-  }).join('');
+  }; // конец renderCard
+
+  // Добавляем плашку таймера к закреплённым premium
+  const renderPinnedCard = (j, i) => {
+    let card = renderCard(j, i);
+    const left = pinnedLeft(j);
+    // вставим бейдж «📌 Закреплено · ещё N» рядом с Premium-бейджем
+    if (left) {
+      card = card.replace(
+        '<span class="badge badge-prem">⭐ Premium</span>',
+        `<span class="badge badge-prem">⭐ Premium</span><span class="badge badge-pin">📌 ${left}</span>`
+      );
+    }
+    return card;
+  };
+
+  let html = '';
+  if (pinned.length) {
+    html += '<div class="feed-section-label">⭐ Premium — закреплённые</div>';
+    html += pinned.map(renderPinnedCard).join('');
+    if (regular.length) html += '<div class="feed-section-label">Все вакансии</div>';
+  }
+  html += regular.map(renderCard).join('');
+  el.innerHTML = html;
 }
 
 function filterJobs(btn, f) {
@@ -1850,7 +1901,7 @@ async function approveJob(btn, jobId, jobTitle, authorTid) {
     // ОДНОКРАТНОЕ одобрение: меняем статус ТОЛЬКО если он ещё 'pending'.
     // Повторный клик вернёт 0 строк → второго одобрения/уведомления не будет.
     const { data, error } = await db.from('jobs')
-      .update({ status: 'active' })
+      .update({ status: 'active', approved_at: new Date().toISOString() })
       .eq('id', jobId)
       .eq('status', 'pending')
       .select();
@@ -2375,7 +2426,7 @@ async function modApprove(id){
   try {
     // Однократно: только из 'pending'
     const { data, error } = await db.from('jobs')
-      .update({ status:'active' }).eq('id', id).eq('status','pending').select();
+      .update({ status:'active', approved_at: new Date().toISOString() }).eq('id', id).eq('status','pending').select();
     if (error) throw error;
     haptic('success');
     showToast((data && data.length) ? '✅ Вакансия одобрена' : 'Уже одобрена');
